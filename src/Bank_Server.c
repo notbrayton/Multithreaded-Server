@@ -8,9 +8,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "Bank.h"
 
 int main(int argc, char *argv[]) {
-    // Parse Command line input
+    // Command Line Input Error Handling
     if (argc != 4) {
         printf("ERROR: Command line input invalid, required format:\n\t$ server <# of worker threads> <# of account> <output file>\n");
         return 0;
@@ -21,7 +22,13 @@ int main(int argc, char *argv[]) {
     char * outFName = argv[3];
 
     printf("Creating %d Worker Threads...\n", numWThreads);
+
     printf("Creating %d Accounts...\n", numAccounts);
+    if (!initialize_accounts(numAccounts)) {
+        printf("ERROR: Account creation failed.\n");
+        return 0;
+    }
+    
     printf("Creating Output File <%s.txt>...\n", outFName);
 
     // Initialize progam based on command line input

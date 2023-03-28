@@ -11,10 +11,23 @@ CFLAGS = -Wall
 # Typing 'make' in the terminal will invoke this call to Server
 all: Server
 
-# Creates an executable file for Shell using:
-# 	- Bank_Server.c
-Server: 
-	$(CC) $(CFLAGS) -o server Bank_Server.c 
+# Creates an executable file for Server using:
+# 	- Bank_Server.o
+#	- Bank.o
+Server: Bank_Server.o Bank.o
+	$(CC) $(CFLAGS) -o server Bank_Server.o Bank.o 
+
+# Creates an object file for Bank_Server.c using:
+#	- Bank_Serve.c
+#	- Bank.h
+Bank_Server.o: Bank_Server.c Bank.h
+	$(CC) $(CFLAGS) -c Bank_Server.c
+
+# Creates an object file Bank.o using:
+#	- Bank.c
+#	- Bank.h
+Bank.o: Bank.c Bank.h
+	$(CC) $(CFLAGS) -c Bank.c
 
 # Typing 'make clean' will invoke a call to this section.
 # 'server' removes the executable file.
