@@ -84,10 +84,13 @@ int main(int argc, char *argv[]) {
             // Unless the request is an END request
 
     /*  INPUT:
-            - 
-
+            Balance Check
+                CHECK <accountid>
+            Transaction
+                TRANS <acct1> <amount1> <acct2> <amount2> <acct3> <amount3> …
+            Exit Program
+                END
     */
-
     char *cmd_line_input = malloc(STR_MAX_SIZE);       // Allocate space for input string
     while(1) {
         char *cmd_line_input;
@@ -95,11 +98,11 @@ int main(int argc, char *argv[]) {
         cmd_line_input[strlen(cmd_line_input) - 1] = '\0';  // Replaces newline character with terminating character in the input string
         int input_length = strlen(cmd_line_input);          // Stores the length of the current input string
 
-
+        if(strcmp("END", cmd_line_input)) {
+            free_accounts();
+            return 0;
+        }
     }
-
-    free_accounts();
-    return 0;
 }
 
 void* worker() {
