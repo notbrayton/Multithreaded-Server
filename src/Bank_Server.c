@@ -93,7 +93,6 @@ int main(int argc, char *argv[]) {
     */
     char *cmd_line_input = malloc(STR_MAX_SIZE);       // Allocate space for input string
     while(1) {
-        char *cmd_line_input;
         fgets(cmd_line_input, STR_MAX_SIZE, stdin);         // Snags entire line from stdin
         cmd_line_input[strlen(cmd_line_input) - 1] = '\0';  // Replaces newline character with terminating character in the input string
         int input_length = strlen(cmd_line_input);          // Stores the length of the current input string
