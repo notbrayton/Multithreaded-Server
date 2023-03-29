@@ -32,7 +32,7 @@ struct queue {                      // Structure for a queue
 };
 
 // Function Declaration
-void* dummy_thread(FILE * fp);
+void* worker();
 
 int main(int argc, char *argv[]) {
     // Command Line Input Error Handling
@@ -40,20 +40,15 @@ int main(int argc, char *argv[]) {
         printf("ERROR: Command line input invalid, required format:\n\t$ server <# of worker threads> <# of account> <output file>\n");
         return 0;
     }
-
-    int numWThreads = atoi(argv[1]);
-    int numAccounts = atoi(argv[2]);
-    char * outFName = argv[3];
     
     // Setting Up Output File
-    printf("Creating Output File <%s>...\n", outFName);
     FILE *fp;
-    fp = fopen(outFName, "w");
+    fp = fopen(argv[3], "w");
     fprintf(fp, "Hello, File!\n");
     fclose(fp);
 
     // Creating Worker Threads
-    printf("Creating %d Worker Threads...\n", numWThreads);
+    int numWThreads = atoi(argv[1]);
     if (numWThreads < 1) {
         printf("ERROR: Invalid worker thread amount, must be at least 1.\n");
         return 0;
@@ -62,7 +57,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Initializing Accounts
-    printf("Creating %d Accounts...\n", numAccounts);
+    int numAccounts = atoi(argv[2]);
     if (!initialize_accounts(numAccounts)) {
         printf("ERROR: Account creation failed.\n");
         return 0;
@@ -79,19 +74,15 @@ int main(int argc, char *argv[]) {
         // Checks request's validity
         // Adds request to request queue
             // Unless the request is an END request
-
-    // Creates a pthread variable
-    pthread_t d1;
     
-    // Creates a new thread with a storage location d1, and start routine dummy_thread
-    pthread_create(&d1, NULL, dummy_thread, NULL);
+    // Use the number of worker threads to set the size of a pthread array containing the worker threads
+    // pthread_t workers[numWorkers];
 
-    // Pauses the calling thread main()'s execution until the thread under d1 is terminated
-    pthread_join(d1, NULL);
 
+    free_accounts();
     return 0;
 }
 
-void* dummy_thread(FILE * fp) {
-    fprintf(fp, "Hello from dummy thread.");
+void* worker() {
+
 }
