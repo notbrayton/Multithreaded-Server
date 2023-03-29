@@ -91,16 +91,21 @@ int main(int argc, char *argv[]) {
             Exit Program
                 END
     */
-    char *cmd_line_input = malloc(STR_MAX_SIZE);       // Allocate space for input string
+    char *userInput = malloc(STR_MAX_SIZE);       // Allocate space for input string
     while(1) {
-        fgets(cmd_line_input, STR_MAX_SIZE, stdin);         // Snags entire line from stdin
-        cmd_line_input[strlen(cmd_line_input) - 1] = '\0';  // Replaces newline character with terminating character in the input string
-        int input_length = strlen(cmd_line_input);          // Stores the length of the current input string
+        fgets(userInput, STR_MAX_SIZE, stdin);         // Snags entire line from stdin
+        userInput[strlen(userInput) - 1] = '\0';  // Replaces newline character with terminating character in the input string
+        int input_length = strlen(userInput);          // Stores the length of the current input string
 
-        if(strcmp("END", cmd_line_input)) {
+        printf("INPUT: %s\n", userInput);
+
+        if(strcmp("END", userInput)) {
             free_accounts();
             return 0;
         }
+        
+        // Clear input string
+        strcpy(userInput, "");
     }
 }
 
