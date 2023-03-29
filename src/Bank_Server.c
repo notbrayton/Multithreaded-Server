@@ -9,8 +9,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <sys/time.h>
 #include <pthread.h>
 #include "Bank.h"
+
+// Constants
+#define STR_MAX_SIZE 256
 
 struct trans {      // Structure for a transaction pair
     int acc_id;     // Account ID
@@ -54,6 +58,10 @@ int main(int argc, char *argv[]) {
         return 0;
     } else {
         // Create Worker Threads
+
+        // Use the number of worker threads to set the size of a pthread array containing the worker threads
+        // pthread_t workers_tid[numWorkers];
+        // int thread_index[numWorkers];
     }
 
     // Initializing Accounts
@@ -74,15 +82,26 @@ int main(int argc, char *argv[]) {
         // Checks request's validity
         // Adds request to request queue
             // Unless the request is an END request
-    
-    // Use the number of worker threads to set the size of a pthread array containing the worker threads
-    // pthread_t workers[numWorkers];
 
+    /*  INPUT:
+            - 
+
+    */
+
+    char *cmd_line_input = malloc(STR_MAX_SIZE);       // Allocate space for input string
+    while(1) {
+        char *cmd_line_input;
+        fgets(cmd_line_input, STR_MAX_SIZE, stdin);         // Snags entire line from stdin
+        cmd_line_input[strlen(cmd_line_input) - 1] = '\0';  // Replaces newline character with terminating character in the input string
+        int input_length = strlen(cmd_line_input);          // Stores the length of the current input string
+
+
+    }
 
     free_accounts();
     return 0;
 }
 
 void* worker() {
-
+    // Do Worker Stuff Here PEPELAUGH
 }
