@@ -13,6 +13,21 @@
 #include <pthread.h>
 #include "Bank.h"
 
+/*
+    struct timeval time;
+    gettimeofday(&time, NULL);
+    printf("TIME %ld.%06.ld\n", time.tv_sec, time.tv_usec);
+*/    
+
+/*  INPUT:
+        Balance Check
+            CHECK <accountid>
+        Transaction
+            TRANS <acct1> <amount1> <acct2> <amount2> <acct3> <amount3> …
+        Exit Program
+            END
+*/
+
 // Constants
 #define STR_MAX_SIZE 256
 
@@ -35,8 +50,12 @@ struct queue {                      // Structure for a queue
     int num_jobs;                   // number of jobs currently in queue
 };
 
+// Global Queue
+struct queue Q;
+
 // Function Declaration
 void* worker();
+int add_request(struct request * r);
 
 int main(int argc, char *argv[]) {
     // Command Line Input Error Handling
@@ -48,8 +67,6 @@ int main(int argc, char *argv[]) {
     // Setting Up Output File
     FILE *fp;
     fp = fopen(argv[3], "w");
-    fprintf(fp, "Hello, File!\n");
-    fclose(fp);
 
     // Creating Worker Threads
     int numWThreads = atoi(argv[1]);
@@ -71,37 +88,48 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-/*
-    struct timeval time;
-    gettimeofday(&time, NULL);
-    printf("TIME %ld.%06.ld\n", time.tv_sec, time.tv_usec);
-*/    
-         
-    // Begin Program Loop
-        // Waits for request
-        // Checks request's validity
-        // Adds request to request queue
-            // Unless the request is an END request
+    // Initialize queue Q
+    Q.head = NULL;
+    Q.tail = NULL;
+    Q.num_jobs = 0;
 
-    /*  INPUT:
-            Balance Check
-                CHECK <accountid>
-            Transaction
-                TRANS <acct1> <amount1> <acct2> <amount2> <acct3> <amount3> …
-            Exit Program
-                END
-    */
     char *userInput = malloc(STR_MAX_SIZE);       // Allocate space for input string
+    int requestCount = 1;
+    // PROGRAM LOOP
     while(1) {
-        fgets(userInput, STR_MAX_SIZE, stdin);         // Snags entire line from stdin
-        userInput[strlen(userInput) - 1] = '\0';  // Replaces newline character with terminating character in the input string
-        int input_length = strlen(userInput);          // Stores the length of the current input string
+        fgets(userInput, STR_MAX_SIZE, stdin);      // Snags entire line from stdin
+        userInput[strlen(userInput) - 1] = '\0';
+        const char delim[2] = " ";
+        char * token;
+        token = strtok(userInput, delim);
 
-        printf("INPUT: %s\n", userInput);
-
-        if(strcmp("END", userInput)) {
+        if (!strcmp(token, "END")) {
             free_accounts();
             return 0;
+        } else if (!strcmp(token, "CHECK")) {   // BALANCE CHECK
+            token = strtok(NULL, delim);    // Get Account ID
+
+            // Build Balance Check Request
+            struct request br1;
+            br1.next = NULL;
+            br1.request_id = requestCount;
+            br1.check_acc_id = atoi(token);
+            br1.transactions = NULL;
+            br1.num_trans = -1;
+            gettimeofday(&br1.starttime, NULL);
+            add_request(&br1);
+            requestCount++;
+
+        } else if (!strcmp(token, "TRANS")) {
+            // TRANSACTION
+            printf("Transaction Request\n");
+        } else {
+            printf("ERROR: Invalid Request, no action taken.\n");
+        }
+
+        while(token != NULL) {
+            printf(" %s\n", token);
+            token = strtok(NULL, delim);
         }
         
         // Clear input string
@@ -111,4 +139,8 @@ int main(int argc, char *argv[]) {
 
 void* worker() {
     // Do Worker Stuff Here PEPELAUGH
+}
+
+int add_request(struct request * r) {
+
 }
