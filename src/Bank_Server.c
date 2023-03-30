@@ -50,8 +50,11 @@ struct queue {                      // Structure for a queue
     int num_jobs;                   // number of jobs currently in queue
 };
 
-// Global Queue
+// Global Variables
+pthread_mutex_t mut;    
+pthread_cond_t worker_cv;
 struct queue Q;
+int clockOut = 0;
 
 // Function Declaration
 void* worker();
@@ -68,19 +71,6 @@ int main(int argc, char *argv[]) {
     FILE *fp;
     fp = fopen(argv[3], "w");
 
-    // Creating Worker Threads
-    int numWThreads = atoi(argv[1]);
-    if (numWThreads < 1) {
-        printf("ERROR: Invalid worker thread amount, must be at least 1.\n");
-        return 0;
-    } else {
-        // Create Worker Threads
-
-        // Use the number of worker threads to set the size of a pthread array containing the worker threads
-        // pthread_t workers_tid[numWorkers];
-        // int thread_index[numWorkers];
-    }
-
     // Initializing Accounts
     int numAccounts = atoi(argv[2]);
     if (!initialize_accounts(numAccounts)) {
@@ -88,24 +78,42 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
+    // Creating Worker Threads
+    int numWThreads = atoi(argv[1]);
+    pthread_t workers_tid[numWThreads];
+    if (numWThreads < 1) {
+        printf("ERROR: Invalid worker thread amount, must be at least 1.\n");
+        return 0;
+    }
+    pthread_t workers_tid[numWThreads]; // array of worker pthreads
+    pthread_mutex_init(&mut, NULL);     // initializes mutex
+    pthread_cond_init(&worker_cv, NULL);     // initialized queue conditional variable
+    int t;
+    for (t = 0; t < numWThreads; t++) {
+        pthread_create(&workers_tid[t], NULL, worker, NULL);    // creates each worker thread
+    }
+
     // Initialize queue Q
     Q.head = NULL;
     Q.tail = NULL;
     Q.num_jobs = 0;
 
-    char *userInput = malloc(STR_MAX_SIZE);       // Allocate space for input string
-    int requestCount = 1;
-    // PROGRAM LOOP
+    //  BEGINNING PROGRAM LOOP
+    char *userInput = malloc(STR_MAX_SIZE);         // Allocate space for input string
+    int requestCount = 1;                           // Used as the request ID
     while(1) {
         fgets(userInput, STR_MAX_SIZE, stdin);      // Snags entire line from stdin
-        userInput[strlen(userInput) - 1] = '\0';
-        const char delim[2] = " ";
-        char * token;
-        token = strtok(userInput, delim);
+        userInput[strlen(userInput) - 1] = '\0';    // Replaceds newline char with a terminating char
+        const char delim[2] = " ";                  // Tells token where to split
+        char * token;                               // Temporarly store input chunk
+        token = strtok(userInput, delim);           // Gets first input chunk
 
         if (!strcmp(token, "END")) {
+
+            clockOut = 1;
             free_accounts();
             return 0;
+
         } else if (!strcmp(token, "CHECK")) {   // BALANCE CHECK
             token = strtok(NULL, delim);    // Get Account ID
 
@@ -121,15 +129,12 @@ int main(int argc, char *argv[]) {
             requestCount++;
 
         } else if (!strcmp(token, "TRANS")) {
+
             // TRANSACTION
             printf("Transaction Request\n");
+
         } else {
             printf("ERROR: Invalid Request, no action taken.\n");
-        }
-
-        while(token != NULL) {
-            printf(" %s\n", token);
-            token = strtok(NULL, delim);
         }
         
         // Clear input string
@@ -138,9 +143,20 @@ int main(int argc, char *argv[]) {
 }
 
 void* worker() {
-    // Do Worker Stuff Here PEPELAUGH
+    while (!clockOut) {
+        if (!clockOut) {
+            // Get New Job
+
+            // Determine Job Type
+
+            // Execute Job Task
+
+            // Repeat
+        }
+    }
+    return NULL;
 }
 
 int add_request(struct request * r) {
-
+    return -1;
 }
