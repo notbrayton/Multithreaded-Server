@@ -80,7 +80,6 @@ int main(int argc, char *argv[]) {
 
     // Creating Worker Threads
     int numWThreads = atoi(argv[1]);
-    pthread_t workers_tid[numWThreads];
     if (numWThreads < 1) {
         printf("ERROR: Invalid worker thread amount, must be at least 1.\n");
         return 0;
@@ -112,7 +111,7 @@ int main(int argc, char *argv[]) {
         if (!strcmp(token, "END")) {
             // Stop taking requests
             // Maybe join main thread with worker threads, so main will wait till all workers finish
-            
+
             clockOut = 1;
             free_accounts();
             return 0;
