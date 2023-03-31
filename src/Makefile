@@ -6,7 +6,7 @@ CC = gcc
 #compiler flags:
 #	-g		adds debugging information to the executable file
 #	-Wall	turns on almost all compiler warnings
-CFLAGS = -Wall
+CFLAGS = -Wall -lpthread
 
 # Typing 'make' in the terminal will invoke this call to Server
 all: Server
