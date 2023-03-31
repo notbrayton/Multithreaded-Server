@@ -55,7 +55,7 @@ FILE *fp;                       // Pointer to output file
 /*================================================================
  *                    FUNCTION DECLARATIONS                      *
 =================================================================*/
-int program_loop();
+void program_loop();
 void* worker(void *);
 int add_request(struct request * r);
 /*===============================================================*/
@@ -112,18 +112,19 @@ int main(int argc, char *argv[]) {
     Q.num_jobs = 0;
 
     // Enter program loop
-    int retVal = program_loop();
-    return retVal;
+    program_loop();
+    return 0;
 }
 
 /**
  * @brief 
  * 
  */
-int program_loop() {
+void program_loop() {
     char *userInput = malloc(STR_MAX_SIZE);         // Allocate space for input string
     int requestCount = 1;                           // Used as the request ID
-    while(1) {
+    int done = 0;                                   // Loop Condition
+    while(!done) {
         // PARSING INPUT  
         fgets(userInput, STR_MAX_SIZE, stdin);      // Snags entire line from stdin
         userInput[strlen(userInput) - 1] = '\0';    // Replaceds newline char with a terminating char
@@ -137,7 +138,7 @@ int program_loop() {
 
             clockOut = 1;
             free_accounts();
-            return 0;
+            done = 1;
 
         } else if (!strcmp(token, "CHECK")) {       // BALANCE CHECK
             token = strtok(NULL, delim);            // Get Account ID to check
