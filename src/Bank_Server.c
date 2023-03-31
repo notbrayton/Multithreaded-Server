@@ -55,6 +55,7 @@ FILE *fp;                       // Pointer to output file
 /*================================================================
  *                    FUNCTION DECLARATIONS                      *
 =================================================================*/
+int program_loop();
 void* worker(void *);
 int add_request(struct request * r);
 /*===============================================================*/
@@ -213,7 +214,7 @@ int program_loop() {
  * @return void* 
  */
 void* worker(void * arg) {
-    sleep(60);
+    usleep(60000);
     while (!clockOut) {
         if (!clockOut) {
             // Get q_mut
