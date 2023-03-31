@@ -326,7 +326,7 @@ int add_request(struct request * r) {
  * 
  * @return struct request* 
  */
-struct request * get_job() {
+struct request * get_request() {
     if (Q.num_jobs < 1) {
         // Queue is empty return NULL
         return NULL;
