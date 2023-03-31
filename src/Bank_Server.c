@@ -208,6 +208,7 @@ void program_loop() {
  * @return void* 
  */
 void* worker() {
+    sleep(60);
     while (!clockOut) {
         if (!clockOut) {
             // Get q_mut
