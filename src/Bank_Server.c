@@ -13,24 +13,15 @@
 #include <pthread.h>
 #include "Bank.h"
 
-/*
-    struct timeval time;
-    gettimeofday(&time, NULL);
-    printf("TIME %ld.%06.ld\n", time.tv_sec, time.tv_usec);
-*/    
-
-/*  INPUT:
-        Balance Check
-            CHECK <accountid>
-        Transaction
-            TRANS <acct1> <amount1> <acct2> <amount2> <acct3> <amount3> …
-        Exit Program
-            END
-*/
-
-// Constants
+/*================================================================
+ *                         CONSTANTS                             *
+=================================================================*/
 #define STR_MAX_SIZE 256
+/*===============================================================*/
 
+/*================================================================
+ *                         STRUCTURES                            *
+=================================================================*/
 struct trans {      // Structure for a transaction pair
     int acc_id;     // Account ID
     int amount;     // amount to be added, could be positive or negative
@@ -49,17 +40,31 @@ struct queue {                      // Structure for a queue
     struct request * head, * tail;  // head and tail of the list
     int num_jobs;                   // number of jobs currently in queue
 };
+/*===============================================================*/
 
-// Global Variables
+/*================================================================
+ *                      GLOBAL VARIABLES                         *
+=================================================================*/
 pthread_mutex_t mut, q_mut;    
 pthread_cond_t worker_cv;
 struct queue Q;
 int clockOut = 0;
+/*===============================================================*/
 
-// Function Declaration
+/*================================================================
+ *                    FUNCTION DECLARATIONS                      *
+=================================================================*/
 void* worker();
 int add_request(struct request * r);
+/*===============================================================*/
 
+/**
+ * @brief 
+ * 
+ * @param argc 
+ * @param argv 
+ * @return int 
+ */
 int main(int argc, char *argv[]) {
     // Command Line Input Error Handling
     if (argc != 4) {
@@ -185,6 +190,11 @@ int main(int argc, char *argv[]) {
     }
 }
 
+/**
+ * @brief 
+ * 
+ * @return void* 
+ */
 void* worker() {
     while (!clockOut) {
         if (!clockOut) {
@@ -207,6 +217,12 @@ void* worker() {
     return NULL;
 }
 
+/**
+ * @brief 
+ * 
+ * @param r 
+ * @return int 
+ */
 int add_request(struct request * r) {
     return -1;
 }
