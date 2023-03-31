@@ -59,6 +59,7 @@ void program_loop(pthread_t * workersArray, int numWThreads);
 int * end_request_protocol(pthread_t * workersArray, int numWThreads);
 void* worker(void *);
 int add_request(struct request * r);
+struct request * get_request();
 /*===============================================================*/
 
 /**
