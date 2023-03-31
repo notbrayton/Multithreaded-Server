@@ -136,6 +136,7 @@ void program_loop() {
             // Stop taking requests
             // Maybe join main thread with worker threads, so main will wait till all workers finish
 
+            printf("Inside END request.\n");
             clockOut = 1;
             free_accounts();
             done = 1;
