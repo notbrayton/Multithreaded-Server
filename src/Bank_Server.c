@@ -45,10 +45,11 @@ struct queue {                      // Structure for a queue
 /*================================================================
  *                      GLOBAL VARIABLES                         *
 =================================================================*/
-pthread_mutex_t mut, q_mut;    
-pthread_cond_t worker_cv;
-struct queue Q;
-int clockOut = 0;
+pthread_mutex_t acc_mut, q_mut; // mut: mutex for database stuff. q_mut: mutex for accessing queue  
+pthread_cond_t worker_cv;       // conditional variable for workers. not sure yet
+struct queue Q;                 // Global Queue containing the requests
+int clockOut = 0;               // Signifies to the workers that it is time to clock out
+FILE *fp;                       // Pointer to output file
 /*===============================================================*/
 
 /*================================================================
@@ -73,7 +74,6 @@ int main(int argc, char *argv[]) {
     }
     
     // Setting Up Output File
-    FILE *fp;
     fp = fopen(argv[3], "w");
 
     // Initializing Accounts
@@ -83,18 +83,26 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    // Creating Worker Threads
+    // Validate Worker Quantity
     int numWThreads = atoi(argv[1]);
     if (numWThreads < 1) {
         printf("ERROR: Invalid worker thread amount, must be at least 1.\n");
         return 0;
     }
-    pthread_t workers_tid[numWThreads]; // array of worker pthreads
-    pthread_mutex_init(&mut, NULL);     // initializes mutex
-    pthread_cond_init(&worker_cv, NULL);     // initialized queue conditional variable
+
+    // Create Threads  
+    pthread_t workers_tid[numWThreads];     // array of worker pthreads
+    pthread_mutex_init(&acc_mut, NULL);     // initializes mutex for accounts
+    pthread_mutex_init(&q_mut, NULL);       // initialized mutex for queue
+    pthread_cond_init(&worker_cv, NULL);    // initializes conditional variable for the queue
     int t;
     for (t = 0; t < numWThreads; t++) {
         pthread_create(&workers_tid[t], NULL, worker, NULL);    // creates each worker thread
+    }
+   
+    // Join Threads
+    for (t = 0; t < numWThreads; t++) {
+        pthread_join(workers_tid[t], NULL);
     }
 
     // Initialize queue Q
@@ -102,7 +110,11 @@ int main(int argc, char *argv[]) {
     Q.tail = NULL;
     Q.num_jobs = 0;
 
-    //  BEGINNING PROGRAM LOOP
+    // Enter program loop
+    program_loop();
+}
+
+void program_loop() {
     char *userInput = malloc(STR_MAX_SIZE);         // Allocate space for input string
     int requestCount = 1;                           // Used as the request ID
     while(1) {
