@@ -92,19 +92,14 @@ int main(int argc, char *argv[]) {
     }
 
     // Create Threads  
-    //pthread_t workers_tid[numWThreads];     // array of worker pthreads
-    //pthread_mutex_init(&acc_mut, NULL);     // initializes mutex for accounts
-    //pthread_mutex_init(&q_mut, NULL);       // initialized mutex for queue
-    //pthread_cond_init(&worker_cv, NULL);    // initializes conditional variable for the queue
-    //int t;
-    //for (t = 0; t < numWThreads; t++) {
-    //    pthread_create(&workers_tid[t], NULL, worker, NULL);    // creates each worker thread
-    //}
-    //
-    //// Join Threads
-    //for (t = 0; t < numWThreads; t++) {
-    //    pthread_join(workers_tid[t], NULL);
-    //}
+    pthread_t workers_tid[numWThreads];     // array of worker pthreads
+    pthread_mutex_init(&acc_mut, NULL);     // initializes mutex for accounts
+    pthread_mutex_init(&q_mut, NULL);       // initialized mutex for queue
+    pthread_cond_init(&worker_cv, NULL);    // initializes conditional variable for the queue
+    int t;
+    for (t = 0; t < numWThreads; t++) {
+        pthread_create(&workers_tid[t], NULL, worker, NULL);    // creates each worker thread
+    }
 
     // Initialize queue Q
     Q.head = NULL;
@@ -112,7 +107,7 @@ int main(int argc, char *argv[]) {
     Q.num_jobs = 0;
 
     // Enter program loop
-    program_loop();
+    program_loop(workers_tid, numWThreads);
     return 0;
 }
 
@@ -120,7 +115,7 @@ int main(int argc, char *argv[]) {
  * @brief 
  * 
  */
-void program_loop() {
+void program_loop(pthread_t * workersArray, int numWThreads) {
     char *userInput = malloc(STR_MAX_SIZE);         // Allocate space for input string
     int requestCount = 1;                           // Used as the request ID
     int done = 0;                                   // Loop Condition
@@ -139,6 +134,13 @@ void program_loop() {
 
             fprintf(fp, "Inside END request.\n");
             clockOut = 1;
+
+            // Join Threads
+            int t = 0;
+            for (t = 0; t < numWThreads; t++) {
+                pthread_join(workersArray[t], NULL);
+            }
+
             free_accounts();
             done = 1;
 
