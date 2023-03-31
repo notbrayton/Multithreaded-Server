@@ -56,7 +56,7 @@ FILE *fp;                       // Pointer to output file
  *                    FUNCTION DECLARATIONS                      *
  ================================================================*/
 void program_loop(pthread_t * workersArray, int numWThreads);
-int * end_request_protocol(pthread_t * workersArray, int numWThreads);
+int end_request_protocol(pthread_t * workersArray, int numWThreads);
 void* worker(void *);
 int add_request(struct request * r);
 struct request * get_request();
@@ -244,7 +244,7 @@ void program_loop(pthread_t * workersArray, int numWThreads) {
  * @param numWThreads 
  * @return int* 
  */
-int * end_request_protocol(pthread_t * workersArray, int numWThreads) {
+int end_request_protocol(pthread_t * workersArray, int numWThreads) {
     // Wait for job queue to reach to zero
     while (Q.num_jobs != 0) {
         // wait
