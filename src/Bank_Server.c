@@ -55,7 +55,7 @@ FILE *fp;                       // Pointer to output file
 /*================================================================
  *                    FUNCTION DECLARATIONS                      *
 =================================================================*/
-void* worker();
+void* worker(void *);
 int add_request(struct request * r);
 /*===============================================================*/
 
@@ -111,10 +111,15 @@ int main(int argc, char *argv[]) {
     Q.num_jobs = 0;
 
     // Enter program loop
-    program_loop();
+    int retVal = program_loop();
+    return retVal;
 }
 
-void program_loop() {
+/**
+ * @brief 
+ * 
+ */
+int program_loop() {
     char *userInput = malloc(STR_MAX_SIZE);         // Allocate space for input string
     int requestCount = 1;                           // Used as the request ID
     while(1) {
@@ -207,7 +212,7 @@ void program_loop() {
  * 
  * @return void* 
  */
-void* worker() {
+void* worker(void * arg) {
     sleep(60);
     while (!clockOut) {
         if (!clockOut) {
