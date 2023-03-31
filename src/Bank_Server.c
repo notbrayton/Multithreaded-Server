@@ -131,7 +131,7 @@ void program_loop() {
         const char delim[2] = " ";                  // Tells token where to split
         char * token;                               // Temporarly store input chunk
         token = strtok(userInput, delim);           // Gets first input chunk
-
+        printf("Token value: %s\n", token);
         if (!strcmp(token, "END")) {
             // Stop taking requests
             // Maybe join main thread with worker threads, so main will wait till all workers finish
