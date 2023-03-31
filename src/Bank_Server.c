@@ -51,7 +51,7 @@ struct queue {                      // Structure for a queue
 };
 
 // Global Variables
-pthread_mutex_t mut;    
+pthread_mutex_t mut, q_mut;    
 pthread_cond_t worker_cv;
 struct queue Q;
 int clockOut = 0;
@@ -102,6 +102,7 @@ int main(int argc, char *argv[]) {
     char *userInput = malloc(STR_MAX_SIZE);         // Allocate space for input string
     int requestCount = 1;                           // Used as the request ID
     while(1) {
+        // PARSING INPUT  
         fgets(userInput, STR_MAX_SIZE, stdin);      // Snags entire line from stdin
         userInput[strlen(userInput) - 1] = '\0';    // Replaceds newline char with a terminating char
         const char delim[2] = " ";                  // Tells token where to split
@@ -109,32 +110,75 @@ int main(int argc, char *argv[]) {
         token = strtok(userInput, delim);           // Gets first input chunk
 
         if (!strcmp(token, "END")) {
-
+            // Stop taking requests
+            // Maybe join main thread with worker threads, so main will wait till all workers finish
+            
             clockOut = 1;
             free_accounts();
             return 0;
 
-        } else if (!strcmp(token, "CHECK")) {   // BALANCE CHECK
-            token = strtok(NULL, delim);    // Get Account ID
+        } else if (!strcmp(token, "CHECK")) {       // BALANCE CHECK
+            token = strtok(NULL, delim);            // Get Account ID to check
+            if (token != NULL) {
+                // Build Balance Check Request
+                struct request bReq;
+                bReq.next = NULL;
+                bReq.request_id = requestCount;
+                bReq.check_acc_id = atoi(token);
+                bReq.transactions = NULL;
+                bReq.num_trans = -1;
+                gettimeofday(&bReq.starttime, NULL);
 
-            // Build Balance Check Request
-            struct request br1;
-            br1.next = NULL;
-            br1.request_id = requestCount;
-            br1.check_acc_id = atoi(token);
-            br1.transactions = NULL;
-            br1.num_trans = -1;
-            gettimeofday(&br1.starttime, NULL);
-            add_request(&br1);
-            requestCount++;
+                add_request(&bReq);                     // Add Request to queue 
+                requestCount++;                         // Increment Request Count
+            } else {   
+                // ERROR
+                printf("INVALID REQUEST: Balance Check was not provided an account ID.\n");
+            }
+        } else if (!strcmp(token, "TRANS")) {       // TRANSACTION
+            int validRequest = 1;                   // Stores request validity: 1 = valid, 0 = invalid
 
-        } else if (!strcmp(token, "TRANS")) {
+            // Build Transaction Request
+            struct request tReq;
+            tReq.next = NULL;
+            tReq.request_id = requestCount;
+            tReq.check_acc_id = -1;
+            gettimeofday(&tReq.starttime, NULL);
+            tReq.transactions = malloc(sizeof(struct trans) * 10);  // Allocating Space for up to 10 transaction pairs
+            tReq.num_trans = 0;                                     // Set number of transactions
 
-            // TRANSACTION
-            printf("Transaction Request\n");
+            // Build Transaction Pairs
+            int i;
+            for (i = 0; i < 10; i++) {
+                token = strtok(NULL, delim);                        // Get Account ID
+                if (token != NULL) { 
+                    tReq.transactions[i].acc_id = atoi(token);      // Assign token to account ID
+                    token = strtok(NULL, delim);                    // Get amount value
+                    if (token != NULL) {
+                        tReq.transactions[i].amount = atoi(token);  // Assign token to amount
+                        tReq.num_trans++;                           // Increase Transaction count
+                    } else {
+                        printf("INVALID REQUEST: an account within the Transaction Request was not provided a transaction amount.\n");
+                        validRequest = 0;   // Request Failed
+                        i = 10;             // End loop
+                    }
+                } else {
+                    // End of transaction pairs
+                    i = 10; // End loop
+                    if (tReq.num_trans < 1) {
+                        printf("INVALID REQUEST: no transaction pairs were provided with transaction request.\n");
+                        validRequest = 0;   // Request failed
+                    }
+                }
+            }
 
+            // Add request and Increment Request Count
+            if (validRequest) {
+                add_request(&tReq);
+                requestCount++;
+            }
         } else {
-            printf("ERROR: Invalid Request, no action taken.\n");
+            printf("INVALID REQUEST: no action taken.\n");
         }
         
         // Clear input string
@@ -145,9 +189,16 @@ int main(int argc, char *argv[]) {
 void* worker() {
     while (!clockOut) {
         if (!clockOut) {
+            // Get q_mut
+            // Wait for jobs
             // Get New Job
+                // Copy the request at the front of the queue
+                // Reassign Head to the next request
+                // Relenquish q_mut
 
             // Determine Job Type
+                // if check_acc_id == -1, then the job is a transaction
+                // else it is a balance check
 
             // Execute Job Task
 
