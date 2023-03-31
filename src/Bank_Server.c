@@ -92,19 +92,19 @@ int main(int argc, char *argv[]) {
     }
 
     // Create Threads  
-    pthread_t workers_tid[numWThreads];     // array of worker pthreads
-    pthread_mutex_init(&acc_mut, NULL);     // initializes mutex for accounts
-    pthread_mutex_init(&q_mut, NULL);       // initialized mutex for queue
-    pthread_cond_init(&worker_cv, NULL);    // initializes conditional variable for the queue
-    int t;
-    for (t = 0; t < numWThreads; t++) {
-        pthread_create(&workers_tid[t], NULL, worker, NULL);    // creates each worker thread
-    }
-   
-    // Join Threads
-    for (t = 0; t < numWThreads; t++) {
-        pthread_join(workers_tid[t], NULL);
-    }
+    //pthread_t workers_tid[numWThreads];     // array of worker pthreads
+    //pthread_mutex_init(&acc_mut, NULL);     // initializes mutex for accounts
+    //pthread_mutex_init(&q_mut, NULL);       // initialized mutex for queue
+    //pthread_cond_init(&worker_cv, NULL);    // initializes conditional variable for the queue
+    //int t;
+    //for (t = 0; t < numWThreads; t++) {
+    //    pthread_create(&workers_tid[t], NULL, worker, NULL);    // creates each worker thread
+    //}
+    //
+    //// Join Threads
+    //for (t = 0; t < numWThreads; t++) {
+    //    pthread_join(workers_tid[t], NULL);
+    //}
 
     // Initialize queue Q
     Q.head = NULL;
@@ -131,17 +131,20 @@ void program_loop() {
         const char delim[2] = " ";                  // Tells token where to split
         char * token;                               // Temporarly store input chunk
         token = strtok(userInput, delim);           // Gets first input chunk
-        printf("Token value: %s\n", token);
+        fprintf(fp, "Token value: %s\n", token);
+
         if (!strcmp(token, "END")) {
             // Stop taking requests
             // Maybe join main thread with worker threads, so main will wait till all workers finish
 
-            printf("Inside END request.\n");
+            fprintf(fp, "Inside END request.\n");
             clockOut = 1;
             free_accounts();
             done = 1;
 
         } else if (!strcmp(token, "CHECK")) {       // BALANCE CHECK
+            fprintf(fp, "Inside CHECK request.\n");
+
             token = strtok(NULL, delim);            // Get Account ID to check
             if (token != NULL) {
                 // Build Balance Check Request
@@ -157,9 +160,10 @@ void program_loop() {
                 requestCount++;                         // Increment Request Count
             } else {   
                 // ERROR
-                printf("INVALID REQUEST: Balance Check was not provided an account ID.\n");
+                fprintf(fp, "INVALID REQUEST: Balance Check was not provided an account ID.\n");
             }
         } else if (!strcmp(token, "TRANS")) {       // TRANSACTION
+            fprintf(fp, "Inside TRANS request.\n");
             int validRequest = 1;                   // Stores request validity: 1 = valid, 0 = invalid
 
             // Build Transaction Request
@@ -182,7 +186,7 @@ void program_loop() {
                         tReq.transactions[i].amount = atoi(token);  // Assign token to amount
                         tReq.num_trans++;                           // Increase Transaction count
                     } else {
-                        printf("INVALID REQUEST: an account within the Transaction Request was not provided a transaction amount.\n");
+                        fprintf(fp, "INVALID REQUEST: an account within the Transaction Request was not provided a transaction amount.\n");
                         validRequest = 0;   // Request Failed
                         i = 10;             // End loop
                     }
@@ -190,7 +194,7 @@ void program_loop() {
                     // End of transaction pairs
                     i = 10; // End loop
                     if (tReq.num_trans < 1) {
-                        printf("INVALID REQUEST: no transaction pairs were provided with transaction request.\n");
+                        fprintf(fp, "INVALID REQUEST: no transaction pairs were provided with transaction request.\n");
                         validRequest = 0;   // Request failed
                     }
                 }
@@ -202,7 +206,7 @@ void program_loop() {
                 requestCount++;
             }
         } else {
-            printf("INVALID REQUEST: no action taken.\n");
+            fprintf(fp, "INVALID REQUEST: no action taken.\n");
         }
         
         // Clear input string
