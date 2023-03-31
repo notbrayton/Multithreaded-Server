@@ -214,7 +214,6 @@ int program_loop() {
  * @return void* 
  */
 void* worker(void * arg) {
-    usleep(60000);
     while (!clockOut) {
         if (!clockOut) {
             // Get q_mut
