@@ -45,8 +45,8 @@ struct queue {                      // Structure for a queue
 /*================================================================
  *                      GLOBAL VARIABLES                         *
 =================================================================*/
-pthread_mutex_t acc_mut, q_mut; // mut: mutex for database stuff. q_mut: mutex for accessing queue  
-pthread_cond_t worker_cv;       // conditional variable for workers. not sure yet
+pthread_mutex_t q_mut;          // q_mut: mutex for accessing queue  
+pthread_mutex_t * acc_mut;      // acc_mut: points to an array mutexs associated with every account
 struct queue Q;                 // Global Queue containing the requests
 int clockOut = 0;               // Signifies to the workers that it is time to clock out
 FILE *fp;                       // Pointer to output file
@@ -54,8 +54,9 @@ FILE *fp;                       // Pointer to output file
 
 /*================================================================
  *                    FUNCTION DECLARATIONS                      *
-=================================================================*/
-void program_loop();
+ ================================================================*/
+void program_loop(pthread_t * workersArray, int numWThreads);
+int * end_request_protocol(pthread_t * workersArray, int numWThreads);
 void* worker(void *);
 int add_request(struct request * r);
 /*===============================================================*/
@@ -91,23 +92,39 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    // Create Threads  
-    pthread_t workers_tid[numWThreads];     // array of worker pthreads
-    pthread_mutex_init(&acc_mut, NULL);     // initializes mutex for accounts
-    pthread_mutex_init(&q_mut, NULL);       // initialized mutex for queue
-    pthread_cond_init(&worker_cv, NULL);    // initializes conditional variable for the queue
-    int t;
-    for (t = 0; t < numWThreads; t++) {
-        pthread_create(&workers_tid[t], NULL, worker, NULL);    // creates each worker thread
-    }
-
     // Initialize queue Q
     Q.head = NULL;
     Q.tail = NULL;
     Q.num_jobs = 0;
 
+    /*================================================================
+     *                     THREAD INITIALIZATION                     *
+     ================================================================*/ 
+    // array of worker pthreads
+    pthread_t workers_tid[numWThreads]; 
+    // Allocating enough space for all the locks
+    acc_mut = malloc(sizeof(pthread_t) * numAccounts);  
+    
+    // initialized mutex for queue
+    pthread_mutex_init(&q_mut, NULL); 
+    int t;
+    for (t = 0; t < numAccounts; t++) {
+        // initializes mutex for every account
+        pthread_mutex_init(&acc_mut[t], NULL); 
+    }
+
+    for (t = 0; t < numWThreads; t++) {
+        // creates each worker thread
+        pthread_create(&workers_tid[t], NULL, worker, NULL);    
+    }
+    /*===============================================================*/
+
     // Enter program loop
     program_loop(workers_tid, numWThreads);
+
+    // Program Termination
+    free_accounts();
+    fclose(fp);
     return 0;
 }
 
@@ -116,38 +133,34 @@ int main(int argc, char *argv[]) {
  * 
  */
 void program_loop(pthread_t * workersArray, int numWThreads) {
-    char *userInput = malloc(STR_MAX_SIZE);         // Allocate space for input string
-    int requestCount = 1;                           // Used as the request ID
-    int done = 0;                                   // Loop Condition
+    char *userInput = malloc(STR_MAX_SIZE);     // Allocate space for input string
+    const char delim[2] = " ";                  // Tells token where to split
+    char * token;                               // Temporarly store input chunk
+    int requestCount = 1;                       // Used as the request ID
+    int done = 0;                               // Loop Condition
+
+    // EVENT LOOP
     while(!done) {
-        // PARSING INPUT  
-        fgets(userInput, STR_MAX_SIZE, stdin);      // Snags entire line from stdin
-        userInput[strlen(userInput) - 1] = '\0';    // Replaceds newline char with a terminating char
-        const char delim[2] = " ";                  // Tells token where to split
-        char * token;                               // Temporarly store input chunk
-        token = strtok(userInput, delim);           // Gets first input chunk
+        // Snags entire line from stdin
+        fgets(userInput, STR_MAX_SIZE, stdin);  
+        // Replaces newline char with a terminating char
+        userInput[strlen(userInput) - 1] = '\0';
+        // Gets first input chunk    
+        token = strtok(userInput, delim);
+
+        // Temporary           
         fprintf(fp, "Token value: %s\n", token);
 
         if (!strcmp(token, "END")) {
-            // Stop taking requests
-            // Maybe join main thread with worker threads, so main will wait till all workers finish
+            // END REQUEST PROTOCOL
+            done = end_request_protocol(workersArray, numWThreads);
 
-            fprintf(fp, "Inside END request.\n");
-            clockOut = 1;
-
-            // Join Threads
-            int t = 0;
-            for (t = 0; t < numWThreads; t++) {
-                pthread_join(workersArray[t], NULL);
-            }
-
-            free_accounts();
-            done = 1;
-
-        } else if (!strcmp(token, "CHECK")) {       // BALANCE CHECK
+        } else if (!strcmp(token, "CHECK")) {       
+            // CHECK REQUEST PROTOCOL
             fprintf(fp, "Inside CHECK request.\n");
 
-            token = strtok(NULL, delim);            // Get Account ID to check
+            // Get Account ID to check
+            token = strtok(NULL, delim);            
             if (token != NULL) {
                 // Build Balance Check Request
                 struct request bReq;
@@ -158,15 +171,20 @@ void program_loop(pthread_t * workersArray, int numWThreads) {
                 bReq.num_trans = -1;
                 gettimeofday(&bReq.starttime, NULL);
 
-                add_request(&bReq);                     // Add Request to queue 
-                requestCount++;                         // Increment Request Count
+                // Add Request to queue 
+                add_request(&bReq);             
+                // Increment Request Count        
+                requestCount++;                         
             } else {   
                 // ERROR
                 fprintf(fp, "INVALID REQUEST: Balance Check was not provided an account ID.\n");
             }
-        } else if (!strcmp(token, "TRANS")) {       // TRANSACTION
+        } else if (!strcmp(token, "TRANS")) {       
+            // TRANSACTION REQUEST PROTOCOL
             fprintf(fp, "Inside TRANS request.\n");
-            int validRequest = 1;                   // Stores request validity: 1 = valid, 0 = invalid
+
+            // Stores request validity: 1 = valid, 0 = invalid
+            int validRequest = 1;                   
 
             // Build Transaction Request
             struct request tReq;
@@ -174,8 +192,10 @@ void program_loop(pthread_t * workersArray, int numWThreads) {
             tReq.request_id = requestCount;
             tReq.check_acc_id = -1;
             gettimeofday(&tReq.starttime, NULL);
-            tReq.transactions = malloc(sizeof(struct trans) * 10);  // Allocating Space for up to 10 transaction pairs
-            tReq.num_trans = 0;                                     // Set number of transactions
+            // Allocating Space for up to 10 transaction pairs
+            tReq.transactions = malloc(sizeof(struct trans) * 10);  
+            // Set number of transactions
+            tReq.num_trans = 0;                                    
 
             // Build Transaction Pairs
             int i;
@@ -219,6 +239,29 @@ void program_loop(pthread_t * workersArray, int numWThreads) {
 /**
  * @brief 
  * 
+ * @param workersArray 
+ * @param numWThreads 
+ * @return int* 
+ */
+int * end_request_protocol(pthread_t * workersArray, int numWThreads) {
+    // Wait for job queue to reach to zero
+    while (Q.num_jobs != 0) {
+        // wait
+    }
+    // Signifies to workers, that they can finish
+    clockOut = 1;
+    // Join Threads to make main wait for worker threads before proceeding
+    int t = 0;
+    for (t = 0; t < numWThreads; t++) {
+        pthread_join(workersArray[t], NULL);
+    }
+    // Return value of 1 to be assigned to program loop condition
+    return 1;
+}
+
+/**
+ * @brief 
+ * 
  * @return void* 
  */
 void* worker(void * arg) {
@@ -250,5 +293,65 @@ void* worker(void * arg) {
  * @return int 
  */
 int add_request(struct request * r) {
-    return -1;
+    // Exit if new request is NULL
+    if (r == NULL) {
+        return -1;
+    }
+
+    // Lock the queue
+    pthread_mutex_lock(&q_mut);
+
+    // Check if queue is empty
+    if (Q.num_jobs < 1) {
+        // r will be the head and tail 
+        Q.head = r;
+        Q.tail = r;
+    } else {
+        // previous tail now points to new tail
+        Q.tail->next = r;
+        // tail gets new tail
+        Q.tail = r;
+    }
+    // Increment job count
+    Q.num_jobs++;
+    // Unlock the queue
+    pthread_mutex_unlock(&q_mut);
+
+    // Return 1 for succesul request addition
+    return 1;
+}
+
+/**
+ * @brief 
+ * 
+ * @return struct request* 
+ */
+struct request * get_job() {
+    if (Q.num_jobs < 1) {
+        // Queue is empty return NULL
+        return NULL;
+    }
+
+    // Pointer to the requested job
+    struct request * task;
+    // Lock the queue
+    pthread_mutex_lock(&q_mut);
+
+    // Task gets the first job in line
+    task = Q.head;
+    // Head gets the next job in line
+    Q.head = Q.head->next;
+
+    if(Q.num_jobs == 1) {
+        // Reassign tail to NULL since queue would now be empty
+        Q.tail = NULL;
+    }
+    // Decrement job count
+    Q.num_jobs--;
+
+    // Unlock the queue
+    pthread_mutex_unlock(&q_mut);
+
+    // Return the job
+    return task;
 }
