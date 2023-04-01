@@ -271,8 +271,10 @@ int end_request_protocol(pthread_t * workersArray, int numWThreads) {
 void* worker(void * arg) {
     while (!clockOut) {
         // Pointer to worker's current task
-        struct request * job = NULL; 
+        struct request * job = NULL;
+
         printf("Worker beginning job search...\n");
+
         // Waits until a job is available or it is time to clock out
         while (job == NULL) {
             // returns if clockOut is true and no jobs remain
@@ -280,8 +282,12 @@ void* worker(void * arg) {
                 return NULL;
             }
             
+            // Lock the queue
+            pthread_mutex_lock(&q_mut);
             // Attempts to get a job, if NULL, there are no current jobs in the queue
             job = get_request();
+            // Unlock the queue
+            pthread_mutex_unlock(&q_mut);
         }
 
         printf("Worker is about to access job data...\n");
@@ -349,8 +355,7 @@ struct request * get_request() {
         // Queue is empty return NULL
         return NULL;
     } 
-    // Lock the queue
-    pthread_mutex_lock(&q_mut);
+
     // struct value to return
     struct request * task;
     // Task gets the first job in line
@@ -364,8 +369,7 @@ struct request * get_request() {
     // Decrement job count
     Q.num_jobs--;
     printf("Request removed from queue. Current job count: %d\n", Q.num_jobs);
-    // Unlock the queue
-    pthread_mutex_unlock(&q_mut);
+
     // return the task
     return task;
 }
