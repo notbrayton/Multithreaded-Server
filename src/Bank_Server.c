@@ -285,7 +285,7 @@ void* worker(void * arg) {
         }
 
         printf("Worker is about to access job data...\n");
-        printf("Working on request %d...\n", job->request_id);
+        printf("Working on request %d...\n", 5);//job->request_id);
         printf("Request Finished, Jobs Remaining: %d\n", Q.num_jobs);
 
         // Determine Job Type
