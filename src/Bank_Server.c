@@ -274,19 +274,15 @@ void* worker(void * arg) {
         struct request * job = NULL; 
         printf("Worker beginning job search...\n");
         // Waits until a job is available or it is time to clock out
-        pthread_mutex_lock(&q_mut);
         while (job == NULL) {
             // returns if clockOut is true and no jobs remain
             if (clockOut && Q.num_jobs == 0) {
-                pthread_mutex_unlock(&q_mut);
                 return NULL;
             }
             
             // Attempts to get a job, if NULL, there are no current jobs in the queue
             get_request(job);
         }
-        pthread_mutex_unlock(&q_mut);
-
 
         printf("Worker is about to access job data...\n");
         printf("Working on request %d...\n", 5);//job->request_id);
@@ -318,6 +314,8 @@ int add_request(struct request * r) {
     // Lock the queue
     pthread_mutex_lock(&q_mut);
 
+    printf("Adding request to queue...\n");
+
     // Check if queue is empty
     if (Q.num_jobs < 1) {
         // r will be the head and tail 
@@ -346,35 +344,28 @@ int add_request(struct request * r) {
  * 
  * @return struct request* 
  */
-void get_request(struct request * task) {
+void get_request(struct request * task) {  
     if (Q.num_jobs < 1) {
         // Queue is empty return NULL
-        return NULL;
+        task = NULL;
+    } else {
+        // Lock the queue
+        pthread_mutex_lock(&q_mut);
+        // Task gets the first job in line
+        task = Q.head;
+        // Head gets the next job in line
+        Q.head = Q.head->next;
+
+        if(Q.num_jobs == 1) {
+            // Reassign tail to NULL since queue would now be empty
+            Q.tail = NULL;
+        }
+        // Decrement job count
+        Q.num_jobs--;
+
+        printf("Request removed from queue. Current job count: %d\n", Q.num_jobs);
+
+        // Unlock the queue
+        pthread_mutex_unlock(&q_mut);
     }
-    
-    // Lock the queue
-    //pthread_mutex_lock(&q_mut);
-
-    // Pointer to the requested job
-    //struct request * task;
-
-    // Task gets the first job in line
-    task = Q.head;
-    // Head gets the next job in line
-    Q.head = Q.head->next;
-
-    if(Q.num_jobs == 1) {
-        // Reassign tail to NULL since queue would now be empty
-        Q.tail = NULL;
-    }
-    // Decrement job count
-    Q.num_jobs--;
-
-    printf("Request removed from queue. Current job count: %d\n", Q.num_jobs);
-
-    // Unlock the queue
-    //pthread_mutex_unlock(&q_mut);
-
-    // Return the job
-    //return task;
 }
