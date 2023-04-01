@@ -59,7 +59,7 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts);
 int end_request_protocol(pthread_t * workersArray, int numWThreads);
 void* worker(void *);
 int add_request(struct request * r);
-void get_request(struct request * task);
+struct request * get_request();
 /*===============================================================*/
 
 /**
@@ -281,7 +281,7 @@ void* worker(void * arg) {
             }
             
             // Attempts to get a job, if NULL, there are no current jobs in the queue
-            get_request(job);
+            job = get_request();
         }
 
         printf("Worker is about to access job data...\n");
@@ -306,37 +306,37 @@ void* worker(void * arg) {
  * @return int 
  */
 int add_request(struct request * r) {
-    // Exit if new request is NULL
-    if (r == NULL) {
-        return -1;
+    // Skip if new request is NULL
+    if (r != NULL) {
+        // Lock the queue
+        pthread_mutex_lock(&q_mut);
+
+        printf("Adding request to queue...\n");
+
+        // Check if queue is empty
+        if (Q.num_jobs < 1) {
+            // r will be the head and tail 
+            Q.head = r;
+            Q.tail = r;
+        } else {
+            // previous tail now points to new tail
+            Q.tail->next = r;
+            // tail gets new tail
+            Q.tail = r;
+        }
+        // Increment job count
+        Q.num_jobs++;
+
+        printf("Request added to queue. Current job count: %d\n", Q.num_jobs);
+
+        // Unlock the queue
+        pthread_mutex_unlock(&q_mut);
+
+        // Return 1 for succesul request addition
+        return 1;
     }
 
-    // Lock the queue
-    pthread_mutex_lock(&q_mut);
-
-    printf("Adding request to queue...\n");
-
-    // Check if queue is empty
-    if (Q.num_jobs < 1) {
-        // r will be the head and tail 
-        Q.head = r;
-        Q.tail = r;
-    } else {
-        // previous tail now points to new tail
-        Q.tail->next = r;
-        // tail gets new tail
-        Q.tail = r;
-    }
-    // Increment job count
-    Q.num_jobs++;
-
-    printf("Request added to queue. Current job count: %d\n", Q.num_jobs);
-
-    // Unlock the queue
-    pthread_mutex_unlock(&q_mut);
-
-    // Return 1 for succesul request addition
-    return 1;
+    printf("WARNING: Request to add was NULL, so it was not added to the job queue.\n");
 }
 
 /**
@@ -344,28 +344,28 @@ int add_request(struct request * r) {
  * 
  * @return struct request* 
  */
-void get_request(struct request * task) {  
+struct request * get_request() {  
     if (Q.num_jobs < 1) {
         // Queue is empty return NULL
-        task = NULL;
-    } else {
-        // Lock the queue
-        pthread_mutex_lock(&q_mut);
-        // Task gets the first job in line
-        task = Q.head;
-        // Head gets the next job in line
-        Q.head = Q.head->next;
-
-        if(Q.num_jobs == 1) {
-            // Reassign tail to NULL since queue would now be empty
-            Q.tail = NULL;
-        }
-        // Decrement job count
-        Q.num_jobs--;
-
-        printf("Request removed from queue. Current job count: %d\n", Q.num_jobs);
-
-        // Unlock the queue
-        pthread_mutex_unlock(&q_mut);
+        return NULL;
+    } 
+    // Lock the queue
+    pthread_mutex_lock(&q_mut);
+    // struct value to return
+    struct request * task;
+    // Task gets the first job in line
+    task = Q.head;
+    // Head gets the next job in line
+    Q.head = Q.head->next;
+    if(Q.num_jobs == 1) {
+        // Reassign tail to NULL since queue would now be empty
+        Q.tail = NULL;
     }
+    // Decrement job count
+    Q.num_jobs--;
+    printf("Request removed from queue. Current job count: %d\n", Q.num_jobs);
+    // Unlock the queue
+    pthread_mutex_unlock(&q_mut);
+    // return the task
+    return task;
 }
