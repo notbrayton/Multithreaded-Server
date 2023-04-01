@@ -314,8 +314,6 @@ int add_request(struct request * r) {
     // Lock the queue
     pthread_mutex_lock(&q_mut);
 
-    printf("Attempting to add request. Current request count: %d", Q.num_jobs);
-
     // Check if queue is empty
     if (Q.num_jobs < 1) {
         // r will be the head and tail 
