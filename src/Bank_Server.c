@@ -285,7 +285,7 @@ void* worker(void * arg) {
         while (job == NULL) {
             // returns if clockOut is true and no jobs remain
             if (clockOut && Q.num_jobs == 0) {
-                return;
+                return NULL;
             }
             
             // Attempts to get a job, if NULL, there are no current jobs in the queue
