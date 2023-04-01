@@ -278,27 +278,31 @@ int end_request_protocol(pthread_t * workersArray, int numWThreads) {
  */
 void* worker(void * arg) {
     while (!clockOut) {
-        if (!clockOut) {
-            // Wait for jobs
-                // If job queue is empty
-            // Get New Job
-            // struct request * job = get_request();
+        // Pointer to worker's current task
+        struct request * job = NULL; 
 
-            // Determine Job Type
-                // if check_acc_id == -1, then the job is a transaction
-                // else it is a balance check
-
-            // Execute Job Task
-                // Acquire lock for the account involved in the operation
-                // Perform operation on the account
-                // Relinquishe the lock 
-
-            struct request * job = get_request();
-            fprintf(fp, "Working on request %d...\n", job->request_id);
-            fprintf(fp, "Request Finished, Jobs Remaining: %d\n", Q.num_jobs);
+        // Waits until a job is available or it is time to clock out
+        while (job == NULL) {
+            // returns if clockOut is true and no jobs remain
+            if (clockOut && Q.num_jobs == 0) {
+                return;
+            }
+            
+            // Attempts to get a job, if NULL, there are no current jobs in the queue
+            job = get_request();
         }
+
+        fprintf(fp, "Working on request %d...\n", job->request_id);
+        fprintf(fp, "Request Finished, Jobs Remaining: %d\n", Q.num_jobs);
+
+        // Determine Job Type
+            // if check_acc_id == -1, then the job is a transaction
+            // else it is a balance check
+        // Execute Job Task
+            // Acquire lock for the account involved in the operation
+            // Perform operation on the account
+            // Relinquishe the lock 
     }
-    return NULL;
 }
 
 /**
@@ -342,6 +346,9 @@ int add_request(struct request * r) {
  * @return struct request* 
  */
 struct request * get_request() {
+    // Lock the queue
+    pthread_mutex_lock(&q_mut);
+
     if (Q.num_jobs < 1) {
         // Queue is empty return NULL
         return NULL;
@@ -349,8 +356,6 @@ struct request * get_request() {
 
     // Pointer to the requested job
     struct request * task;
-    // Lock the queue
-    pthread_mutex_lock(&q_mut);
 
     // Task gets the first job in line
     task = Q.head;
