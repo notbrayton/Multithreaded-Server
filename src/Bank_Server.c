@@ -273,7 +273,7 @@ void* worker(void * arg) {
         // Pointer to worker's current task
         struct request * job = NULL;
 
-        fprintf(fp, "Worker beginning job search...\n");
+        //fprintf(fp, "Worker beginning job search...\n");
 
         // Waits until a job is available or it is time to clock out
         while (job == NULL) {
@@ -290,7 +290,7 @@ void* worker(void * arg) {
             pthread_mutex_unlock(&q_mut);
         }
 
-        fprintf(fp, "Working on request %d...\n", job->request_id);
+        //fprintf(fp, "Working on request %d...\n", job->request_id);
 
         if (job->check_acc_id == -1) {
             // Perform Transaction operation
@@ -355,7 +355,7 @@ void* worker(void * arg) {
             fprintf(fp, "<%d> BAL <%d> TIME %ld.%06.ld %ld.%06.ld\n", job->request_id, balance, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
         }
 
-        fprintf(fp, "Request Finished, Jobs Remaining: %d\n", Q.num_jobs);
+        //fprintf(fp, "Request Finished, Jobs Remaining: %d\n", Q.num_jobs);
     }
     return NULL;
 }
@@ -386,7 +386,7 @@ int add_request(struct request * r) {
         // Increment job count
         Q.num_jobs++;
 
-        fprintf(fp, "Request added to queue. Current job count: %d\n", Q.num_jobs);
+        //fprintf(fp, "Request added to queue. Current job count: %d\n", Q.num_jobs);
 
         // Unlock the queue
         pthread_mutex_unlock(&q_mut);
@@ -421,7 +421,7 @@ struct request * get_request() {
     }
     // Decrement job count
     Q.num_jobs--;
-    fprintf(fp, "Request removed from queue. Current job count: %d\n", Q.num_jobs);
+    //fprintf(fp, "Request removed from queue. Current job count: %d\n", Q.num_jobs);
 
     // return the task
     return task;
