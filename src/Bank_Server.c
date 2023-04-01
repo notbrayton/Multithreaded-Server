@@ -284,8 +284,9 @@ void* worker(void * arg) {
             get_request(job);
         }
 
-        fprintf(fp, "Working on request %d...\n", job->request_id);
-        fprintf(fp, "Request Finished, Jobs Remaining: %d\n", Q.num_jobs);
+        printf("Worker is about to access job data...\n");
+        printf("Working on request %d...\n", job->request_id);
+        printf("Request Finished, Jobs Remaining: %d\n", Q.num_jobs);
 
         // Determine Job Type
             // if check_acc_id == -1, then the job is a transaction
