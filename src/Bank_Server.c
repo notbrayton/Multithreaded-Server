@@ -59,7 +59,7 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts);
 int end_request_protocol(pthread_t * workersArray, int numWThreads);
 void* worker(void *);
 int add_request(struct request * r);
-struct request * get_request();
+void get_request(struct request * task);
 /*===============================================================*/
 
 /**
@@ -251,6 +251,7 @@ int end_request_protocol(pthread_t * workersArray, int numWThreads) {
     while (Q.num_jobs != 0) {
         // wait
     }
+    
     // Signifies to workers, that they can finish
     clockOut = 1;
     // Join Threads to make main wait for worker threads before proceeding
@@ -280,7 +281,7 @@ void* worker(void * arg) {
             }
             
             // Attempts to get a job, if NULL, there are no current jobs in the queue
-            job = get_request();
+            get_request(job);
         }
 
         fprintf(fp, "Working on request %d...\n", job->request_id);
@@ -340,7 +341,7 @@ int add_request(struct request * r) {
  * 
  * @return struct request* 
  */
-struct request * get_request() {
+void get_request(struct request * task) {
     // Lock the queue
     pthread_mutex_lock(&q_mut);
 
@@ -350,7 +351,7 @@ struct request * get_request() {
     }
 
     // Pointer to the requested job
-    struct request * task;
+    //struct request * task;
 
     // Task gets the first job in line
     task = Q.head;
@@ -370,5 +371,5 @@ struct request * get_request() {
     pthread_mutex_unlock(&q_mut);
 
     // Return the job
-    return task;
+    //return task;
 }
