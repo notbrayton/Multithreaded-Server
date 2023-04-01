@@ -294,6 +294,52 @@ void* worker(void * arg) {
 
         if (job->check_acc_id == -1) {
             // Perform Transaction operation
+            // Acquire Locks for each of the accounts
+            int i;
+            for (i = 0; i < job->num_trans; i++) {
+                pthread_mutex_lock(&acc_mut[job->transactions[i].acc_id]);
+            }
+
+            // Perform Transactions
+            int accountsSufficient = 1;
+            int firstISFAcc;
+            int balanceArr[job->num_trans];
+            for (i = 0; i < job->num_trans && accountsSufficient == 1; i++) {
+                // Get Account Balance
+                balanceArr[i] = read_account(job->transactions[i].acc_id);
+                // Perform Transaction
+                balanceArr[i] = balanceArr[i] + job->transactions[i].amount;
+                // Check if transaction is valid
+                if(balanceArr[i] < 0) {
+                    // Transaction was not valid, store account ID
+                    firstISFAcc = job->transactions[i].acc_id;
+                    // Set ISF trigger
+                    accountsSufficient = 0;
+                }
+            }
+
+            // Write new balances to accounts if all transactions are valid
+            if (accountsSufficient) {
+                // Write new balances
+                for (i = 0; i < job->num_trans; i++) {
+                    // Write new balance to the account
+                    write_account(job->transactions[i].acc_id, balanceArr[i]);
+                }
+            }
+
+            // Relenquishe Locks for each count
+            for (i = 0; i < job->num_trans; i++) {
+                pthread_mutex_unlock(&acc_mut[job->transactions[i].acc_id]);
+            }
+
+            // Get endtime
+            gettimeofday(&job->endtime, NULL);
+            // Print result to file
+            if (accountsSufficient) {
+                fprintf(fp, "<%d> OK TIME %ld.%06.ld %ld.%06.ld\n", job->request_id, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
+            } else {
+                fprintf(fp, "<%d> ISF <%d> TIME %ld.%06.ld %ld.%06.ld\n", job->request_id, firstISFAcc, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
+            }
         } else {
             // Perform Balance operation
             // Get lock associated account id
@@ -303,16 +349,11 @@ void* worker(void * arg) {
             // reliquishe the lock 
             pthread_mutex_unlock(&acc_mut[job->check_acc_id]);
 
-            fprintf(fp, "%d BAL %d\n", job->request_id, balance);
+            // Get endtime
+            gettimeofday(&job->endtime, NULL);
+            // Print result to file
+            fprintf(fp, "<%d> BAL <%d> TIME %ld.%06.ld %ld.%06.ld\n", job->request_id, balance, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
         }
-
-        // Determine Job Type
-            // if check_acc_id == -1, then the job is a transaction
-            // else it is a balance check
-        // Execute Job Task
-            // Acquire lock for the account involved in the operation
-            // Perform operation on the account
-            // Relinquishe the lock 
 
         fprintf(fp, "Request Finished, Jobs Remaining: %d\n", Q.num_jobs);
     }
