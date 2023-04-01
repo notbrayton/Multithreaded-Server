@@ -149,12 +149,15 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
 
     // EVENT LOOP
     while(!done) {
+        printf("> ");
         // Snags entire line from stdin
         fgets(userInput, STR_MAX_SIZE, stdin);  
         // Replaces newline char with a terminating char
         userInput[strlen(userInput) - 1] = '\0';
         // Gets first input chunk    
         token = strtok(userInput, delim);
+        
+        printf("< ");
 
         if (!strcmp(token, "END")) {
             // Begin Exit Protocol
@@ -174,12 +177,14 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
                 gettimeofday(&bReq.starttime, NULL);
 
                 // Add Request to queue 
-                add_request(&bReq);             
+                add_request(&bReq);
+                // Console Response
+                printf("ID %d\n", requestCount);             
                 // Increment Request Count        
                 requestCount++;                         
             } else {   
                 // ERROR
-                fprintf(fp, "INVALID REQUEST: Balance Check was not provided an account ID.\n");
+                printf("INVALID REQUEST: Balance Check was not provided an account ID.\n");
             }
         } else if (!strcmp(token, "TRANS")) {       
             // TRANSACTION REQUEST PROTOCOL
@@ -208,7 +213,7 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
                         tReq.transactions[i].amount = atoi(token);  // Assign token to amount
                         tReq.num_trans++;                           // Increase Transaction count
                     } else {
-                        fprintf(fp, "INVALID REQUEST: an account within the Transaction Request was not provided a transaction amount or an invalid account number was provided.\n");
+                        printf("INVALID REQUEST: an account within the Transaction Request was not provided a transaction amount or an invalid account number was provided.\n");
                         validRequest = 0;   // Request Failed
                         i = 10;             // End loop
                     }
@@ -216,7 +221,7 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
                     // End of transaction pairs
                     i = 10; // End loop
                     if (tReq.num_trans < 1) {
-                        fprintf(fp, "INVALID REQUEST: no transaction pairs were provided with transaction request.\n");
+                        printf("INVALID REQUEST: no transaction pairs were provided with transaction request.\n");
                         validRequest = 0;   // Request failed
                     }
                 }
@@ -225,10 +230,12 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
             // Add request and Increment Request Count
             if (validRequest) {
                 add_request(&tReq);
+                // Console Response
+                printf("ID %d\n", requestCount); 
                 requestCount++;
             }
         } else {
-            fprintf(fp, "INVALID REQUEST: no action taken.\n");
+            printf("INVALID REQUEST: no action taken.\n");
         }
         
         // Clear input string
@@ -336,9 +343,9 @@ void* worker(void * arg) {
             gettimeofday(&job->endtime, NULL);
             // Print result to file
             if (accountsSufficient) {
-                fprintf(fp, "<%d> OK TIME %ld.%06.ld %ld.%06.ld\n", job->request_id, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
+                fprintf(fp, "%d OK TIME %ld.%06.ld %ld.%06.ld\n", job->request_id, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
             } else {
-                fprintf(fp, "<%d> ISF <%d> TIME %ld.%06.ld %ld.%06.ld\n", job->request_id, firstISFAcc, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
+                fprintf(fp, "%d ISF %d TIME %ld.%06.ld %ld.%06.ld\n", job->request_id, firstISFAcc, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
             }
         } else {
             // Perform Balance operation
@@ -352,7 +359,7 @@ void* worker(void * arg) {
             // Get endtime
             gettimeofday(&job->endtime, NULL);
             // Print result to file
-            fprintf(fp, "<%d> BAL <%d> TIME %ld.%06.ld %ld.%06.ld\n", job->request_id, balance, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
+            fprintf(fp, "%d BAL %d TIME %ld.%06.ld %ld.%06.ld\n", job->request_id, balance, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
         }
 
         //fprintf(fp, "Request Finished, Jobs Remaining: %d\n", Q.num_jobs);
