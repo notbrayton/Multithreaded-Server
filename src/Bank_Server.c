@@ -291,7 +291,20 @@ void* worker(void * arg) {
         }
 
         fprintf(fp, "Working on request %d...\n", job->request_id);
-        fprintf(fp, "Request Finished, Jobs Remaining: %d\n", Q.num_jobs);
+
+        if (job->check_acc_id == -1) {
+            // Perform Transaction operation
+        } else {
+            // Perform Balance operation
+            // Get lock associated account id
+            pthread_mutex_lock(&acc_mut[job->check_acc_id]);
+            // Call read account and store result
+            int balance = read_account(job->check_acc_id);
+            // reliquishe the lock 
+            pthread_mutex_unlock(&acc_mut[job->check_acc_id]);
+
+            fprintf(fp, "%d BAL %d\n", job->request_id, balance);
+        }
 
         // Determine Job Type
             // if check_acc_id == -1, then the job is a transaction
@@ -300,6 +313,8 @@ void* worker(void * arg) {
             // Acquire lock for the account involved in the operation
             // Perform operation on the account
             // Relinquishe the lock 
+
+        fprintf(fp, "Request Finished, Jobs Remaining: %d\n", Q.num_jobs);
     }
     return NULL;
 }
