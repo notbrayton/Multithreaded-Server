@@ -303,6 +303,7 @@ void* worker(void * arg) {
             // Perform operation on the account
             // Relinquishe the lock 
     }
+    return NULL;
 }
 
 /**
