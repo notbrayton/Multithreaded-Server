@@ -63,10 +63,13 @@ struct request * get_request();
 /*===============================================================*/
 
 /**
- * @brief 
+ * Main function of the server that handles server startup and initialization as well as a few exit protocols. 
  * 
- * @param argc 
- * @param argv 
+ * Syntax to the launch the server program:
+ *      $ server <# of worker threads> <# of accounts> <output file>;
+ * 
+ * @param argc - number of command line arguments
+ * @param argv - array of command line arguments
  * @return int 
  */
 int main(int argc, char *argv[]) {
@@ -130,8 +133,12 @@ int main(int argc, char *argv[]) {
 }
 
 /**
- * @brief 
+ * The event loop of the program, with each the loop the program takes in a request, parses the request, 
+ * then builds the request based on the type of request. After each request is built, they are added to the 
+ * request queue where they will wait to be chosen by a worker thread.
  * 
+ * @param workersArray - pointer to the start of the worker thread array
+ * @param numWThreads  - number worker threads in the thread array
  */
 void program_loop(pthread_t * workersArray, int numWThreads) {
     char *userInput = malloc(STR_MAX_SIZE);     // Allocate space for input string
@@ -238,7 +245,10 @@ void program_loop(pthread_t * workersArray, int numWThreads) {
 }
 
 /**
- * @brief 
+ * Handles the termination state of the server. The function will wait until all 
+ * remaining requests in the request queue are handled. From there it signals to 
+ * the workers that they are free to clock out, and then joins the main thread
+ * with all of the worker threads to wait until each worker finishes.
  * 
  * @param workersArray 
  * @param numWThreads 
@@ -249,6 +259,7 @@ int end_request_protocol(pthread_t * workersArray, int numWThreads) {
     //while (Q.num_jobs != 0) {
         // wait
     //}
+
     // Signifies to workers, that they can finish
     clockOut = 1;
     // Join Threads to make main wait for worker threads before proceeding
@@ -282,6 +293,10 @@ void* worker(void * arg) {
             // Execute Job Task
 
             // Repeat
+
+            struct request * job = get_request();
+            fprintf(fp, "Working on request %d...\n", job->request_id);
+            fprintf(fp, "Request Finished, Jobs Remaining: %d\n", Q.num_jobs);
         }
     }
     return NULL;
