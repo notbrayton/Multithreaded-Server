@@ -325,6 +325,9 @@ int add_request(struct request * r) {
     }
     // Increment job count
     Q.num_jobs++;
+
+    fprintf(fp, "Request added to queue. Current job count: %d\n", Q.num_jobs);
+
     // Unlock the queue
     pthread_mutex_unlock(&q_mut);
 
@@ -360,6 +363,8 @@ struct request * get_request() {
     }
     // Decrement job count
     Q.num_jobs--;
+
+    fprintf(fp, "Request removed from queue. Current job count: %d\n", Q.num_jobs);
 
     // Unlock the queue
     pthread_mutex_unlock(&q_mut);
