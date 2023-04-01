@@ -272,7 +272,7 @@ void* worker(void * arg) {
     while (!clockOut) {
         // Pointer to worker's current task
         struct request * job = NULL; 
-        fprintf(fp, "Worker beginning job search...\n");
+        printf("Worker beginning job search...\n");
         // Waits until a job is available or it is time to clock out
         while (job == NULL) {
             // returns if clockOut is true and no jobs remain
@@ -313,6 +313,8 @@ int add_request(struct request * r) {
     // Lock the queue
     pthread_mutex_lock(&q_mut);
 
+    printf("Attempting to add request. Current request count: %d", Q.num_jobs);
+
     // Check if queue is empty
     if (Q.num_jobs < 1) {
         // r will be the head and tail 
@@ -327,7 +329,7 @@ int add_request(struct request * r) {
     // Increment job count
     Q.num_jobs++;
 
-    fprintf(fp, "Request added to queue. Current job count: %d\n", Q.num_jobs);
+    printf("Request added to queue. Current job count: %d\n", Q.num_jobs);
 
     // Unlock the queue
     pthread_mutex_unlock(&q_mut);
@@ -365,7 +367,7 @@ void get_request(struct request * task) {
     // Decrement job count
     Q.num_jobs--;
 
-    fprintf(fp, "Request removed from queue. Current job count: %d\n", Q.num_jobs);
+    printf("Request removed from queue. Current job count: %d\n", Q.num_jobs);
 
     // Unlock the queue
     pthread_mutex_unlock(&q_mut);
