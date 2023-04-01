@@ -342,13 +342,13 @@ int add_request(struct request * r) {
  * @return struct request* 
  */
 void get_request(struct request * task) {
-    // Lock the queue
-    pthread_mutex_lock(&q_mut);
-
     if (Q.num_jobs < 1) {
         // Queue is empty return NULL
         return NULL;
     }
+    
+    // Lock the queue
+    pthread_mutex_lock(&q_mut);
 
     // Pointer to the requested job
     //struct request * task;
