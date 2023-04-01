@@ -55,7 +55,7 @@ FILE *fp;                       // Pointer to output file
 /*================================================================
  *                    FUNCTION DECLARATIONS                      *
  ================================================================*/
-void program_loop(pthread_t * workersArray, int numWThreads);
+void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts);
 int end_request_protocol(pthread_t * workersArray, int numWThreads);
 void* worker(void *);
 int add_request(struct request * r);
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     /*===============================================================*/
 
     // Enter program loop
-    program_loop(workers_tid, numWThreads);
+    program_loop(workers_tid, numWThreads, numAccounts);
 
     // Program Termination
     free_accounts();
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
  * @param workersArray - pointer to the start of the worker thread array
  * @param numWThreads  - number worker threads in the thread array
  */
-void program_loop(pthread_t * workersArray, int numWThreads) {
+void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
     char *userInput = malloc(STR_MAX_SIZE);     // Allocate space for input string
     const char delim[2] = " ";                  // Tells token where to split
     char * token;                               // Temporarly store input chunk
@@ -156,17 +156,11 @@ void program_loop(pthread_t * workersArray, int numWThreads) {
         // Gets first input chunk    
         token = strtok(userInput, delim);
 
-        // Temporary           
-        fprintf(fp, "Token value: %s\n", token);
-
         if (!strcmp(token, "END")) {
-            // END REQUEST PROTOCOL
+            // Begin Exit Protocol
             done = end_request_protocol(workersArray, numWThreads);
-
         } else if (!strcmp(token, "CHECK")) {       
             // CHECK REQUEST PROTOCOL
-            fprintf(fp, "Inside CHECK request.\n");
-
             // Get Account ID to check
             token = strtok(NULL, delim);            
             if (token != NULL) {
@@ -189,8 +183,6 @@ void program_loop(pthread_t * workersArray, int numWThreads) {
             }
         } else if (!strcmp(token, "TRANS")) {       
             // TRANSACTION REQUEST PROTOCOL
-            fprintf(fp, "Inside TRANS request.\n");
-
             // Stores request validity: 1 = valid, 0 = invalid
             int validRequest = 1;                   
 
@@ -212,11 +204,11 @@ void program_loop(pthread_t * workersArray, int numWThreads) {
                 if (token != NULL) { 
                     tReq.transactions[i].acc_id = atoi(token);      // Assign token to account ID
                     token = strtok(NULL, delim);                    // Get amount value
-                    if (token != NULL) {
+                    if (token != NULL && tReq.transactions[i].acc_id < numAccounts && tReq.transactions[i].acc_id >= 0) {
                         tReq.transactions[i].amount = atoi(token);  // Assign token to amount
                         tReq.num_trans++;                           // Increase Transaction count
                     } else {
-                        fprintf(fp, "INVALID REQUEST: an account within the Transaction Request was not provided a transaction amount.\n");
+                        fprintf(fp, "INVALID REQUEST: an account within the Transaction Request was not provided a transaction amount or an invalid account number was provided.\n");
                         validRequest = 0;   // Request Failed
                         i = 10;             // End loop
                     }
@@ -256,10 +248,9 @@ void program_loop(pthread_t * workersArray, int numWThreads) {
  */
 int end_request_protocol(pthread_t * workersArray, int numWThreads) {
     // Wait for job queue to reach to zero
-    //while (Q.num_jobs != 0) {
+    while (Q.num_jobs != 0) {
         // wait
-    //}
-
+    }
     // Signifies to workers, that they can finish
     clockOut = 1;
     // Join Threads to make main wait for worker threads before proceeding
@@ -280,7 +271,7 @@ void* worker(void * arg) {
     while (!clockOut) {
         // Pointer to worker's current task
         struct request * job = NULL; 
-
+        fprintf(fp, "Worker beginning job search...\n");
         // Waits until a job is available or it is time to clock out
         while (job == NULL) {
             // returns if clockOut is true and no jobs remain
