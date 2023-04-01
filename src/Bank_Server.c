@@ -279,20 +279,19 @@ int end_request_protocol(pthread_t * workersArray, int numWThreads) {
 void* worker(void * arg) {
     while (!clockOut) {
         if (!clockOut) {
-            // Get q_mut
             // Wait for jobs
+                // If job queue is empty
             // Get New Job
-                // Copy the request at the front of the queue
-                // Reassign Head to the next request
-                // Relenquish q_mut
+            // struct request * job = get_request();
 
             // Determine Job Type
                 // if check_acc_id == -1, then the job is a transaction
                 // else it is a balance check
 
             // Execute Job Task
-
-            // Repeat
+                // Acquire lock for the account involved in the operation
+                // Perform operation on the account
+                // Relinquishe the lock 
 
             struct request * job = get_request();
             fprintf(fp, "Working on request %d...\n", job->request_id);
