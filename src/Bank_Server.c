@@ -178,7 +178,7 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
             // Begin Exit Protocol
             done = end_request_protocol(workersArray, numWThreads);
             // Exit the program loop function
-            break;
+            return;
         } else if (!strcmp(token, "CHECK")) {       
             // CHECK REQUEST PROTOCOL
             // Output indicator
@@ -203,7 +203,7 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
                     pthread_mutex_lock(&q_mut);
                     // Add Request to queue 
                     add_request(&bReq);
-                    pthread_cond_broadcast(&jobs_cv);
+                    //pthread_cond_broadcast(&jobs_cv);
 
                     // unlock the queue
                     pthread_mutex_unlock(&q_mut);
@@ -273,7 +273,7 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
                 pthread_mutex_lock(&q_mut);
                 // Add request to queue
                 add_request(&tReq);
-                pthread_cond_broadcast(&jobs_cv);
+                //pthread_cond_broadcast(&jobs_cv);
                 // unlock the queue
                 pthread_mutex_unlock(&q_mut);
                 // Console Response
@@ -309,7 +309,6 @@ int end_request_protocol(pthread_t * workersArray, int numWThreads) {
 
     // Signifies to workers, that they can finish
     clockOut = 1;
-    pthread_cond_broadcast(&jobs_cv);
 
     // Join Threads to make main wait for worker threads before proceeding
     int t = 0;
@@ -333,9 +332,9 @@ void* worker(void * arg) {
         struct request * job = NULL;
         // Lock the queue
         pthread_mutex_lock(&q_mut);
-        while(Q.num_jobs == 0 && clockOut == 0) {
-            pthread_cond_wait(&jobs_cv, &q_mut);
-        }
+        //while(Q.num_jobs == 0 && clockOut == 0) {
+            //pthread_cond_wait(&jobs_cv, &q_mut);
+        //}
         // Attempts to get a job, if NULL, there are no current jobs in the queue
         job = get_request();
         // Unlock the queue
