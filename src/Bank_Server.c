@@ -112,6 +112,7 @@ int main(int argc, char *argv[]) {
      ================================================================*/ 
     // array of worker pthreads
     pthread_t workers_tid[numWThreads]; 
+    int thread_index[numWThreads];
     // Allocating enough space for all the locks
     acc_mut = malloc(sizeof(pthread_t) * numAccounts);  
     
@@ -124,8 +125,9 @@ int main(int argc, char *argv[]) {
     }
 
     for (t = 0; t < numWThreads; t++) {
+        thread_index[t] = t;
         // creates each worker thread
-        pthread_create(&workers_tid[t], NULL, worker, NULL);    
+        pthread_create(&workers_tid[t], NULL, worker, (void *)&thread_index[t]);    
     }
     /*===============================================================*/
 
@@ -341,13 +343,13 @@ void* worker(void * arg) {
             if (insufAccID == -1) {
                 // lock print file
                 flockfile(fp);
-                fprintf(fp, "%d OK TIME %ld.%06ld %ld.%06ld\n", job->request_id, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
+                fprintf(fp, "%d OK TIME %ld.%06ld %ld.%06ld \tThread: %d\n", job->request_id, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec, *((int *)arg));
                 // unlock print file
                 funlockfile(fp);
             } else {
                 // lock print file
                 flockfile(fp);
-                fprintf(fp, "%d ISF %d TIME %ld.%06ld %ld.%06ld\n", job->request_id, insufAccID, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
+                fprintf(fp, "%d ISF %d TIME %ld.%06ld %ld.%06ld \tThread: %d\n", job->request_id, insufAccID, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec, *((int *)arg));
                 // unlock print file
                 funlockfile(fp);
             }
@@ -364,7 +366,7 @@ void* worker(void * arg) {
             // lock print file
             flockfile(fp);
             // Print result to file
-            fprintf(fp, "%d BAL %d TIME %ld.%06ld %ld.%06ld\n", job->request_id, balance, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
+            fprintf(fp, "%d BAL %d TIME %ld.%06ld %ld.%06ld \tThread: %d\n", job->request_id, balance, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec, *((int *)arg));
             // unlock print file
             funlockfile(fp);
         }
