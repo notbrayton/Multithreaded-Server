@@ -305,7 +305,7 @@ int end_request_protocol(pthread_t * workersArray, int numWThreads) {
         //pthread_cond_broadcast(&jobs_cv);
     }
 
-    fprintf("Job Count: %d", Q.num_jobs);
+    printf("Job Count: %d", Q.num_jobs);
 
     // Signifies to workers, that they can finish
     clockOut = 1;
