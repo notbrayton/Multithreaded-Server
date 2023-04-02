@@ -178,7 +178,7 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
                 struct request bReq;
                 bReq.next = NULL;
                 bReq.request_id = requestCount;
-                bReq.check_acc_id = atoi(token);
+                bReq.check_acc_id = (atoi(token) - 1);
                 bReq.transactions = NULL;
                 bReq.num_trans = -1;
                 gettimeofday(&bReq.starttime, NULL);
@@ -213,7 +213,7 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
                 token = strtok(NULL, delim);                        
                 if (token != NULL) { 
                     // Assign token to account ID
-                    tReq.transactions[i].acc_id = atoi(token);     
+                    tReq.transactions[i].acc_id = (atoi(token) - 1);     
                     // Get amount value
                     token = strtok(NULL, delim);                    
                     if (token != NULL && tReq.transactions[i].acc_id < numAccounts && tReq.transactions[i].acc_id >= 0) {
