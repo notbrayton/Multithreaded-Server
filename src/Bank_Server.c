@@ -335,14 +335,12 @@ int end_request_protocol() {
  * @return void* 
  */
 void* worker(void * arg) {
-    while (clockOut == 0) {
+    while (clockOut == 0 || Q.num_jobs > 0) {
         // Pointer to worker's current task
         struct request * job = NULL;
+        
         // Lock the queue
         pthread_mutex_lock(&q_mut);
-        while(Q.num_jobs == 0) 
-            pthread_cond_wait(&jobs_cv, &q_mut);
-
         // Attempts to get a job, if NULL, there are no current jobs in the queue
         job = get_request();
         // Unlock the queue
