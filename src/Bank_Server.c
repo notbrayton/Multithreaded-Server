@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
     program_loop(workers_tid, numWThreads, numAccounts);
 
     // Program Termination
-    //free_accounts();
+    free_accounts();
     fclose(fp);
     return 0;
 }
@@ -168,7 +168,7 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
             // Begin Exit Protocol
             done = end_request_protocol(workersArray, numWThreads);
             // Exit the program loop function
-            return;
+            break;
         } else if (!strcmp(token, "CHECK")) {       
             // CHECK REQUEST PROTOCOL
             // Output indicator
