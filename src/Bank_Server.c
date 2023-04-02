@@ -361,13 +361,13 @@ void* worker(void * arg) {
             if (insufAccID == -1) {
                 // lock print file
                 flockfile(fp);
-                fprintf(fp, "%d OK TIME %ld.%06ld %ld.%06ld \tThread: %d\n", job->request_id, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec, *((int *)arg));
+                fprintf(fp, "%d OK TIME %ld.%06ld %ld.%06ld \tThread: %d, Jobs: %d\n", job->request_id, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec, *((int *)arg), Q.num_jobs);
                 // unlock print file
                 funlockfile(fp);
             } else {
                 // lock print file
                 flockfile(fp);
-                fprintf(fp, "%d ISF %d TIME %ld.%06ld %ld.%06ld \tThread: %d\n", job->request_id, insufAccID, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec, *((int *)arg));
+                fprintf(fp, "%d ISF %d TIME %ld.%06ld %ld.%06ld \tThread: %d, Jobs: %d\n", job->request_id, insufAccID, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec, *((int *)arg), Q.num_jobs);
                 // unlock print file
                 funlockfile(fp);
             }
@@ -386,7 +386,7 @@ void* worker(void * arg) {
             // lock print file
             flockfile(fp);
             // Print result to file
-            fprintf(fp, "%d BAL %d TIME %ld.%06ld %ld.%06ld \tThread: %d\n", job->request_id, balance, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec, *((int *)arg));
+            fprintf(fp, "%d BAL %d TIME %ld.%06ld %ld.%06ld \tThread: %d, Jobs: %d\n", job->request_id, balance, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec, *((int *)arg), Q.num_jobs);
             // unlock print file
             funlockfile(fp);
         }
