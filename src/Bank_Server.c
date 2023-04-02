@@ -303,12 +303,22 @@ void* worker(void * arg) {
         if (job->check_acc_id == -1) {
             // Perform Transaction operation
             // Acquire Locks for each of the accounts
+            sortIDLeastToGreatest(job->transactions, job->num_trans);
+
+            // Print Sorted Transaction Array
+            printf("Accounts: ");
             int i;
+            for (i = 0; i < job->num_trans; i++) {
+                printf("%d, ", job->transactions[i].acc_id);
+            }
+            printf("\n");
+
+            // Acquire Locks for each of the accounts
+            //int i;
             for (i = 0; i < job->num_trans; i++) {
                 pthread_mutex_lock(&acc_mut[job->transactions[i].acc_id]);
             }
 
-            //sortIDLeastToGreatest(job->transactions, job->num_trans);
             int insufAccID = transaction_operation(job);
 
             // Relenquishe Locks for each count
