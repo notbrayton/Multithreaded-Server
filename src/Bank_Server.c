@@ -180,7 +180,7 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
                 struct request bReq;
                 bReq.next = NULL;
                 bReq.request_id = requestCount;
-                bReq.check_acc_id = (atoi(token) - 1);
+                bReq.check_acc_id = atoi(token);
                 bReq.transactions = NULL;
                 bReq.num_trans = -1;
                 gettimeofday(&bReq.starttime, NULL);
@@ -217,10 +217,10 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
                 token = strtok(NULL, delim);                        
                 if (token != NULL) { 
                     // Assign token to account ID
-                    tReq.transactions[i].acc_id = (atoi(token) - 1);     
+                    tReq.transactions[i].acc_id = atoi(token);     
                     // Get amount value
                     token = strtok(NULL, delim);                    
-                    if (token != NULL && tReq.transactions[i].acc_id < numAccounts && tReq.transactions[i].acc_id >= 0) {
+                    if (token != NULL && tReq.transactions[i].acc_id <= numAccounts && tReq.transactions[i].acc_id > 0) {
                         // Assign token to amount
                         tReq.transactions[i].amount = atoi(token);  
                         // Increase Transaction count
@@ -315,13 +315,13 @@ void* worker(void * arg) {
             // Acquire Locks for each of the accounts
             int i;
             for (i = 0; i < job->num_trans; i++) {
-                pthread_mutex_lock(&acc_mut[job->transactions[i].acc_id]);
+                pthread_mutex_lock(&acc_mut[job->transactions[i].acc_id - 1]);
             }
             // Attempt operation
             int insufAccID = transaction_operation(job);
             // Relenquishe Locks for each count
             for (i = 0; i < job->num_trans; i++) {
-                pthread_mutex_unlock(&acc_mut[job->transactions[i].acc_id]);
+                pthread_mutex_unlock(&acc_mut[job->transactions[i].acc_id - 1]);
             }
             // Get endtime
             gettimeofday(&job->endtime, NULL);
@@ -334,11 +334,11 @@ void* worker(void * arg) {
         } else {
             // Perform Balance operation
             // Get lock associated account id
-            pthread_mutex_lock(&acc_mut[job->check_acc_id]);
+            pthread_mutex_lock(&acc_mut[job->check_acc_id - 1]);
             // Call read account and store result
             int balance = read_account(job->check_acc_id);
             // reliquishe the lock 
-            pthread_mutex_unlock(&acc_mut[job->check_acc_id]);
+            pthread_mutex_unlock(&acc_mut[job->check_acc_id - 1]);
             // Get endtime
             gettimeofday(&job->endtime, NULL);
             // Print result to file
