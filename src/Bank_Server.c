@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
 
     // Program Termination
     free_accounts();
-    fclose(fp);
+    //fclose(fp);
     return 0;
 }
 
