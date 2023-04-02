@@ -302,6 +302,8 @@ int end_request_protocol(pthread_t * workersArray, int numWThreads) {
     // Wait for job queue to reach to zero
     while (Q.num_jobs != 0) {
         // wait
+        printf("Job Count: %d", Q.num_jobs);
+        fflush(stdout);
     }
     // Signifies to workers, that they can finish
     clockOut = 1;
