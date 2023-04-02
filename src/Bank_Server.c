@@ -51,6 +51,7 @@ struct queue {                      // Structure for a queue
 =================================================================*/
 pthread_mutex_t q_mut;          // q_mut: mutex for accessing queue  
 pthread_mutex_t * acc_mut;      // acc_mut: points to an array mutexs associated with every account
+pthread_cond_t jobs_cv;         
 struct queue Q;                 // Global Queue containing the requests
 int clockOut = 0;               // Signifies to the workers that it is time to clock out
 FILE *fp;                       // Pointer to output file
@@ -113,6 +114,9 @@ int main(int argc, char *argv[]) {
     // array of worker pthreads
     pthread_t workers_tid[numWThreads]; 
     int thread_index[numWThreads];
+
+    pthread_cond_init(&jobs_cv, NULL);
+
     // Allocating enough space for all the locks
     acc_mut = malloc(sizeof(pthread_t) * numAccounts);  
     
@@ -297,6 +301,9 @@ int end_request_protocol(pthread_t * workersArray, int numWThreads) {
     }
     // Signifies to workers, that they can finish
     clockOut = 1;
+
+    pthread_cond_broadcast(&jobs_cv);
+    
     // Join Threads to make main wait for worker threads before proceeding
     int t = 0;
     for (t = 0; t < numWThreads; t++) {
@@ -326,6 +333,10 @@ void* worker(void * arg) {
             }
             // Lock the queue
             pthread_mutex_lock(&q_mut);
+            while(Q.num_jobs == 0) {
+                pthread_cond_wait(&jobs_cv, &q_mut);
+            }
+
             // Attempts to get a job, if NULL, there are no current jobs in the queue
             job = get_request();
             // Unlock the queue
