@@ -180,16 +180,24 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
                 struct request bReq;
                 bReq.next = NULL;
                 bReq.request_id = requestCount;
-                bReq.check_acc_id = atoi(token);
                 bReq.transactions = NULL;
                 bReq.num_trans = -1;
-                gettimeofday(&bReq.starttime, NULL);
-                // Add Request to queue 
-                add_request(&bReq);
-                // Console Response
-                printf("ID %d\n", requestCount);             
-                // Increment Request Count        
-                requestCount++;                         
+                bReq.check_acc_id = atoi(token);
+                
+                // If valid ID is provided finsish building request and add it to the queue
+                if (bReq.check_acc_id <= numAccounts && bReq.check_acc_id > 0) {
+                    // Store current time as start time for request
+                    gettimeofday(&bReq.starttime, NULL);
+                    // Add Request to queue 
+                    add_request(&bReq);
+                    // Console Response
+                    printf("ID %d\n", requestCount);             
+                    // Increment Request Count        
+                    requestCount++;       
+                } else {
+                    // Error message
+                    printf("INVALID REQUEST: The account provided with CHECK request does not exist.\n");   
+                }               
             } else {   
                 // ERROR
                 printf("INVALID REQUEST: Balance Check was not provided an account ID.\n");
@@ -356,8 +364,9 @@ void* worker(void * arg) {
  * @return int - returns -1 if transactions were sufficient, or returns account ID of the first account with insufficient funds.
  */
 int transaction_operation(struct request * job) {
-    // Perform Transactions
+    // Gets value of ISF account if found    
     int firstISFAcc = -1;
+    // Array of the balances corresponding to accounts
     int balanceArr[job->num_trans];
 
     int i;
@@ -372,7 +381,6 @@ int transaction_operation(struct request * job) {
             firstISFAcc = job->transactions[i].acc_id;
         }
     }
-
     // Write new balances to accounts if all transactions are valid
     if (firstISFAcc == -1) {
         // Write new balances
@@ -442,12 +450,22 @@ struct request * get_request() {
     return task;
 }
 
+/**
+ * Takes a pointer to an array of trans type objects and sorts the elements from least to greatest based on account id.
+ * 
+ * @param transactions - array to be sorted
+ * @param num_trans - number of elements in the array
+ */
 void sortIDLeastToGreatest(struct trans * transactions, int num_trans) {
+    // Temporary trans object
     struct trans temp;
     int i, j;
     for (i = 0; i < num_trans; i++) {
+        // Checking current i against every other object in the array
         for (j = i + 1; j < num_trans; j++) {
+            // If true swap the two transactions
             if (transactions[i].acc_id > transactions[j].acc_id) {
+                // swapping positions
                 temp = transactions[j];
                 transactions[j] = transactions[i];
                 transactions[i] = temp;
