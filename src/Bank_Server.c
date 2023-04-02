@@ -148,7 +148,6 @@ int main(int argc, char *argv[]) {
 
     // Join Threads to make main wait for worker threads before proceeding
     pthread_join(input_tid, NULL);
-    int t = 0;
     for (t = 0; t < numWThreads; t++) {
         pthread_join(workers_tid[t], NULL);
     }
@@ -193,7 +192,7 @@ void* program_loop(void * arg) {
             // Begin Exit Protocol
             done = end_request_protocol();
             // Exit the program loop function
-            return;
+            exit(0);
         } else if (!strcmp(token, "CHECK")) {       
             // CHECK REQUEST PROTOCOL
             // Output indicator
