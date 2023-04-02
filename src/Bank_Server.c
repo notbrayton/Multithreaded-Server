@@ -310,7 +310,7 @@ void* worker(void * arg) {
         while (job == NULL) {
             // returns if clockOut is true and no jobs remain
             if (clockOut && Q.num_jobs == 0) {
-                return NULL;
+                exit(0);
             }
             // Lock the queue
             pthread_mutex_lock(&q_mut);
