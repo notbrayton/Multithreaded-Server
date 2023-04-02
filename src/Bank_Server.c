@@ -300,6 +300,7 @@ void* program_loop(void * arg) {
         // Clear input string
         strcpy(userInput, "");
     }
+    exit(0);
 }
 
 /**
