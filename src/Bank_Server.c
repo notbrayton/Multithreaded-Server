@@ -300,10 +300,10 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
  */
 int end_request_protocol(pthread_t * workersArray, int numWThreads) {
     // Wait for job queue to reach to zero
-    //while (Q.num_jobs != 0) {
+    while (Q.num_jobs != 0) {
         // wait
-        //pthread_cond_broadcast(&jobs_cv);
-    //}
+        pthread_cond_broadcast(&jobs_cv);
+    }
 
     printf("Job Count: %d", Q.num_jobs);
 
@@ -339,12 +339,12 @@ void* worker(void * arg) {
             if (clockOut && Q.num_jobs == 0) {
                 exit(0);
             }
+
             // Lock the queue
             pthread_mutex_lock(&q_mut);
-            while(Q.num_jobs == 0) {
+            while(Q.num_jobs == 0 && clockOut == 0) {
                 pthread_cond_wait(&jobs_cv, &q_mut);
             }
-
             // Attempts to get a job, if NULL, there are no current jobs in the queue
             job = get_request();
             // Unlock the queue
