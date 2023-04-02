@@ -169,6 +169,8 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
         if (!strcmp(token, "END")) {
             // Begin Exit Protocol
             done = end_request_protocol(workersArray, numWThreads);
+            // Exit the program loop function
+            return;
         } else if (!strcmp(token, "CHECK")) {       
             // CHECK REQUEST PROTOCOL
             // Get Account ID to check
