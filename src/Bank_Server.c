@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
     program_loop(workers_tid, numWThreads, numAccounts);
 
     // Program Termination
-    free_accounts();
+    //free_accounts();
     //fclose(fp);
     return 0;
 }
