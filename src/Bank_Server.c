@@ -220,7 +220,7 @@ void* program_loop(void * arg) {
                     pthread_mutex_lock(&q_mut);
                     // Add Request to queue 
                     add_request(&bReq);
-                    pthread_cond_broadcast(&jobs_cv);
+                    //pthread_cond_broadcast(&jobs_cv);
 
                     // unlock the queue
                     pthread_mutex_unlock(&q_mut);
@@ -290,7 +290,7 @@ void* program_loop(void * arg) {
                 pthread_mutex_lock(&q_mut);
                 // Add request to queue
                 add_request(&tReq);
-                pthread_cond_broadcast(&jobs_cv);
+                //pthread_cond_broadcast(&jobs_cv);
                 // unlock the queue
                 pthread_mutex_unlock(&q_mut);
                 // Console Response
@@ -319,8 +319,7 @@ int end_request_protocol() {
     // Wait for job queue to reach to zero
     while (numWorkersRemaining > 0) {
        // wait
-       pthread_cond_broadcast(&jobs_cv);
-       //usleep(10);
+       //pthread_cond_broadcast(&jobs_cv);
     }
 
     // Signifies to workers, that they can finish
@@ -343,8 +342,8 @@ void* worker(void * arg) {
         struct request * job = NULL;
         // Lock the queue
         pthread_mutex_lock(&q_mut);
-        while(Q.num_jobs == 0 && clockOut == 0) 
-            pthread_cond_wait(&jobs_cv, &q_mut);
+        //while(Q.num_jobs == 0 && clockOut == 0) 
+            //pthread_cond_wait(&jobs_cv, &q_mut);
         // Attempts to get a job, if NULL, there are no current jobs in the queue
         job = get_request();
         // Unlock the queue
