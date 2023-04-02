@@ -318,6 +318,7 @@ int end_request_protocol() {
     while (numWorkersRemaining > 0) {
        // wait
         printf("Number of workers remaining: %d\n", numWorkersRemaining);
+        printf("Number of jobs remaining: %d\n", Q.num_jobs);
     }
 
     // Signifies to workers, that they can finish
