@@ -303,7 +303,7 @@ int end_request_protocol(pthread_t * workersArray, int numWThreads) {
    while (Q.num_jobs != 0) {
        // wait
        pthread_cond_broadcast(&jobs_cv);
-       usleep(10);
+       //usleep(10);
     }
 
     // Signifies to workers, that they can finish
