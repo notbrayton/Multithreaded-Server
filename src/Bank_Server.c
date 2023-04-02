@@ -339,9 +339,17 @@ void* worker(void * arg) {
             gettimeofday(&job->endtime, NULL);
             // Print result to file
             if (insufAccID == -1) {
+                // lock print file
+                flockfile(fp);
                 fprintf(fp, "%d OK TIME %ld.%06ld %ld.%06ld\n", job->request_id, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
+                // unlock print file
+                funlockfile(fp);
             } else {
+                // lock print file
+                flockfile(fp);
                 fprintf(fp, "%d ISF %d TIME %ld.%06ld %ld.%06ld\n", job->request_id, insufAccID, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
+                // unlock print file
+                funlockfile(fp);
             }
         } else {
             // Perform Balance operation
@@ -353,8 +361,12 @@ void* worker(void * arg) {
             pthread_mutex_unlock(&acc_mut[job->check_acc_id - 1]);
             // Get endtime
             gettimeofday(&job->endtime, NULL);
+            // lock print file
+            flockfile(fp);
             // Print result to file
             fprintf(fp, "%d BAL %d TIME %ld.%06ld %ld.%06ld\n", job->request_id, balance, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
+            // unlock print file
+            funlockfile(fp);
         }
     }
     return NULL;
