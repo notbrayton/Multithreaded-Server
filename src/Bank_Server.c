@@ -340,8 +340,9 @@ void* worker(void * arg) {
         struct request * job = NULL;
         // Lock the queue
         pthread_mutex_lock(&q_mut);
-        while(Q.num_jobs == 0 && clockOut == 0) 
+        while(Q.num_jobs == 0) 
             pthread_cond_wait(&jobs_cv, &q_mut);
+
         // Attempts to get a job, if NULL, there are no current jobs in the queue
         job = get_request();
         // Unlock the queue
