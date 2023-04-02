@@ -194,8 +194,14 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
                 if (bReq.check_acc_id <= numAccounts && bReq.check_acc_id > 0) {
                     // Store current time as start time for request
                     gettimeofday(&bReq.starttime, NULL);
+
+                    // Lock the queue
+                    pthread_mutex_lock(&q_mut);
                     // Add Request to queue 
                     add_request(&bReq);
+                    // unlock the queue
+                    pthread_mutex_unlock(&q_mut);
+
                     // Console Response
                     printf("ID %d\n", requestCount);             
                     // Increment Request Count        
@@ -257,7 +263,11 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
             }
             // Add request and Increment Request Count
             if (validRequest) {
+                // Lock the queue
+                pthread_mutex_lock(&q_mut);
                 add_request(&tReq);
+                // unlock the queue
+                pthread_mutex_unlock(&q_mut);
                 // Console Response
                 printf("ID %d\n", requestCount); 
                 requestCount++;
@@ -371,7 +381,7 @@ void* worker(void * arg) {
             funlockfile(fp);
         }
     }
-    return NULL;
+    exit(0);
 }
 
 /**
@@ -419,8 +429,6 @@ int transaction_operation(struct request * job) {
 void add_request(struct request * r) {
     // Skip if new request is NULL
     if (r != NULL) {
-        // Lock the queue
-        pthread_mutex_lock(&q_mut);
         // Check if queue is empty
         if (Q.num_jobs < 1) {
             // r will be the head and tail 
@@ -434,8 +442,6 @@ void add_request(struct request * r) {
         }
         // Increment job count
         Q.num_jobs++;
-        // Unlock the queue
-        pthread_mutex_unlock(&q_mut);
         // Return 1 for succesul request addition
         return;
     }
