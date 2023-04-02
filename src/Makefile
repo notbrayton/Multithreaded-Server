@@ -15,7 +15,7 @@ all: Server
 # 	- Bank_Server.o
 #	- Bank.o
 Server: Bank_Server.o Bank.o
-	$(CC) $(CFLAGS) -o server Bank_Server.o Bank.o 
+	$(CC) $(CFLAGS) -o appserver Bank_Server.o Bank.o 
 
 # Creates an object file for Bank_Server.c using:
 #	- Bank_Serve.c
@@ -30,8 +30,8 @@ Bank.o: Bank.c Bank.h
 	$(CC) $(CFLAGS) -c Bank.c
 
 # Typing 'make clean' will invoke a call to this section.
-# 'server' removes the executable file.
+# 'appserver' removes the executable file.
 # '-.o' removes old object files.
 # '*~' removes backup files.
 clean:
-	$(RM) server *.o *~
+	$(RM) appserver *.o *~
