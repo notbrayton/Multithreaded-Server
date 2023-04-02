@@ -335,7 +335,7 @@ int end_request_protocol() {
  * @return void* 
  */
 void* worker(void * arg) {
-    while (clockOut == 0 || Q.num_jobs > 0) {
+    while (clockOut == 0) {
         // Pointer to worker's current task
         struct request * job = NULL;
         // Lock the queue
