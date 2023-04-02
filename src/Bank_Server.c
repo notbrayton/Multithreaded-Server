@@ -315,11 +315,11 @@ void* program_loop(void * arg) {
  */
 int end_request_protocol() {
     // Wait for job queue to reach to zero
-    while (numWorkersRemaining > 0) {
+   // while (numWorkersRemaining > 0) {
        // wait
-        printf("Number of workers remaining: %d\n", numWorkersRemaining);
-        printf("Number of jobs remaining: %d\n", Q.num_jobs);
-    }
+        //printf("Number of workers remaining: %d\n", numWorkersRemaining);
+        //printf("Number of jobs remaining: %d\n", Q.num_jobs);
+    //}
 
     // Signifies to workers, that they can finish
     clockOut = 1;
