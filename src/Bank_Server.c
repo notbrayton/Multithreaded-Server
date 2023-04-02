@@ -203,6 +203,8 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
                     pthread_mutex_lock(&q_mut);
                     // Add Request to queue 
                     add_request(&bReq);
+                    pthread_cond_broadcast(&jobs_cv);
+
                     // unlock the queue
                     pthread_mutex_unlock(&q_mut);
 
@@ -269,7 +271,9 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
             if (validRequest) {
                 // Lock the queue
                 pthread_mutex_lock(&q_mut);
+                // Add request to queue
                 add_request(&tReq);
+                pthread_cond_broadcast(&jobs_cv);
                 // unlock the queue
                 pthread_mutex_unlock(&q_mut);
                 // Console Response
@@ -303,7 +307,7 @@ int end_request_protocol(pthread_t * workersArray, int numWThreads) {
     clockOut = 1;
 
     pthread_cond_broadcast(&jobs_cv);
-    
+
     // Join Threads to make main wait for worker threads before proceeding
     int t = 0;
     for (t = 0; t < numWThreads; t++) {
