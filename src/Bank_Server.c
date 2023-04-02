@@ -330,9 +330,9 @@ void* worker(void * arg) {
             gettimeofday(&job->endtime, NULL);
             // Print result to file
             if (insufAccID == -1) {
-                fprintf(fp, "%d OK TIME %ld.%06.ld %ld.%06.ld\n", job->request_id, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
+                fprintf(fp, "%d OK TIME %ld.%06ld %ld.%06ld\n", job->request_id, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
             } else {
-                fprintf(fp, "%d ISF %d TIME %ld.%06.ld %ld.%06.ld\n", job->request_id, insufAccID, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
+                fprintf(fp, "%d ISF %d TIME %ld.%06ld %ld.%06ld\n", job->request_id, insufAccID, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
             }
         } else {
             // Perform Balance operation
