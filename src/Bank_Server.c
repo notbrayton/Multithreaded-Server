@@ -397,7 +397,9 @@ void* worker(void * arg) {
             funlockfile(fp);
         }
     }
+    
     numWorkersRemaining--;
+    printf("Number of workers remaining: %d\n", numWorkersRemaining);
     exit(0);
 }
 
