@@ -61,6 +61,7 @@ void* worker(void *);
 int transaction_operation(struct request * job);
 void add_request(struct request * r);
 struct request * get_request();
+void sortIDLeastToGreatest(struct trans * transactions, int num_trans);
 /*===============================================================*/
 
 /**
@@ -307,6 +308,7 @@ void* worker(void * arg) {
                 pthread_mutex_lock(&acc_mut[job->transactions[i].acc_id]);
             }
 
+            sortIDLeastToGreatest(job->transactions, job->num_trans);
             int insufAccID = transaction_operation(job);
 
             // Relenquishe Locks for each count
@@ -433,4 +435,25 @@ struct request * get_request() {
     Q.num_jobs--;
     // return the task
     return task;
+}
+
+void sortIDLeastToGreatest(struct trans * transactions, int num_trans) {
+    struct trans temp;
+    int i, j;
+    for (i = 0; i < num_trans; i++) {
+        for (j = i + 1; j < num_trans; j++) {
+            if (transactions[i].acc_id > transactions[j].acc_id) {
+                temp = transactions[j];
+                transactions[j] = transactions[i];
+                transactions[i] = temp;
+            }
+        }
+    }
+
+    // Print Sorted Transaction Array
+    printf("Accounts: ");
+    for (i = 0; i < num_trans; i++) {
+        printf("%d, ", transactions[i].acc_id);
+    }
+    printf("\n");
 }
