@@ -309,7 +309,7 @@ void* worker(void * arg) {
         if (job->check_acc_id == -1) {
             // Perform Transaction operation
             // Sort Transactions by Account ID from least to greatest
-            sortIDLeastToGreatest(job->transactions, job->num_trans);
+            //sortIDLeastToGreatest(job->transactions, job->num_trans);
             // Acquire Locks for each of the accounts
             int i;
             for (i = 0; i < job->num_trans; i++) {
