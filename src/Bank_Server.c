@@ -347,7 +347,7 @@ void* worker(void * arg) {
             // Get endtime
             gettimeofday(&job->endtime, NULL);
             // Print result to file
-            fprintf(fp, "%d BAL %d TIME %ld.%06ld %ld.%06ld\n", job->request_id, balance, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
+            fprintf(fp, "%d BAL %d TIME %ld.%06ld %ld.%06ld\n", job->request_id, balance, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
         }
     }
     return NULL;
