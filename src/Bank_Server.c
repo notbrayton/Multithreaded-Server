@@ -302,7 +302,7 @@ int end_request_protocol(pthread_t * workersArray, int numWThreads) {
     // Wait for job queue to reach to zero
     while (Q.num_jobs != 0) {
         // wait
-        pthread_cond_broadcast(&jobs_cv);
+        //pthread_cond_broadcast(&jobs_cv);
     }
 
     fprintf("Job Count: %d", Q.num_jobs);
@@ -401,7 +401,7 @@ void* worker(void * arg) {
             funlockfile(fp);
         }
     }
-    
+
     exit(0);
 }
 
