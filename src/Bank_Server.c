@@ -317,7 +317,7 @@ int end_request_protocol() {
     // Wait for job queue to reach to zero
     while (numWorkersRemaining > 0) {
        // wait
-       pthread_cond_broadcast(&jobs_cv);
+        printf("Number of workers remaining: %d\n", numWorkersRemaining);
     }
 
     // Signifies to workers, that they can finish
@@ -397,7 +397,6 @@ void* worker(void * arg) {
             funlockfile(fp);
         }
     }
-    
     numWorkersRemaining--;
     printf("Number of workers remaining: %d\n", numWorkersRemaining);
     exit(0);
