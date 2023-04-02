@@ -308,7 +308,7 @@ void* worker(void * arg) {
                 pthread_mutex_lock(&acc_mut[job->transactions[i].acc_id]);
             }
 
-            sortIDLeastToGreatest(job->transactions, job->num_trans);
+            //sortIDLeastToGreatest(job->transactions, job->num_trans);
             int insufAccID = transaction_operation(job);
 
             // Relenquishe Locks for each count
