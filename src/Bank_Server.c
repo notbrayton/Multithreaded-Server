@@ -58,7 +58,8 @@ FILE *fp;                       // Pointer to output file
 void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts);
 int end_request_protocol(pthread_t * workersArray, int numWThreads);
 void* worker(void *);
-int add_request(struct request * r);
+int transaction_operation(struct request * job);
+void add_request(struct request * r);
 struct request * get_request();
 /*===============================================================*/
 
@@ -66,7 +67,7 @@ struct request * get_request();
  * Main function of the server that handles server startup and initialization as well as a few exit protocols. 
  * 
  * Syntax to the launch the server program:
- *      $ server <# of worker threads> <# of accounts> <output file>;
+ *      $ appserver <# of worker threads> <# of accounts> <output file>;
  * 
  * @param argc - number of command line arguments
  * @param argv - array of command line arguments
@@ -149,6 +150,7 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
 
     // EVENT LOOP
     while(!done) {
+        // Input indicator
         printf("> ");
         // Snags entire line from stdin
         fgets(userInput, STR_MAX_SIZE, stdin);  
@@ -157,6 +159,7 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
         // Gets first input chunk    
         token = strtok(userInput, delim);
         
+        // Output indicator
         printf("< ");
 
         if (!strcmp(token, "END")) {
@@ -271,7 +274,9 @@ int end_request_protocol(pthread_t * workersArray, int numWThreads) {
 }
 
 /**
- * @brief 
+ * Handles the worker thread operations. Continues to loop until clockOut signals the loop to end. Worker will wait until a
+ * job is available, and once the job is acquired the worker determines whether it is a CHECK request or a TRANS request. 
+ * Worker then carrys out the job and repeats the process. 
  * 
  * @return void* 
  */
@@ -280,15 +285,12 @@ void* worker(void * arg) {
         // Pointer to worker's current task
         struct request * job = NULL;
 
-        //fprintf(fp, "Worker beginning job search...\n");
-
         // Waits until a job is available or it is time to clock out
         while (job == NULL) {
             // returns if clockOut is true and no jobs remain
             if (clockOut && Q.num_jobs == 0) {
                 return NULL;
             }
-            
             // Lock the queue
             pthread_mutex_lock(&q_mut);
             // Attempts to get a job, if NULL, there are no current jobs in the queue
@@ -296,8 +298,6 @@ void* worker(void * arg) {
             // Unlock the queue
             pthread_mutex_unlock(&q_mut);
         }
-
-        //fprintf(fp, "Working on request %d...\n", job->request_id);
 
         if (job->check_acc_id == -1) {
             // Perform Transaction operation
@@ -307,32 +307,7 @@ void* worker(void * arg) {
                 pthread_mutex_lock(&acc_mut[job->transactions[i].acc_id]);
             }
 
-            // Perform Transactions
-            int accountsSufficient = 1;
-            int firstISFAcc;
-            int balanceArr[job->num_trans];
-            for (i = 0; i < job->num_trans && accountsSufficient == 1; i++) {
-                // Get Account Balance
-                balanceArr[i] = read_account(job->transactions[i].acc_id);
-                // Perform Transaction
-                balanceArr[i] = balanceArr[i] + job->transactions[i].amount;
-                // Check if transaction is valid
-                if(balanceArr[i] < 0) {
-                    // Transaction was not valid, store account ID
-                    firstISFAcc = job->transactions[i].acc_id;
-                    // Set ISF trigger
-                    accountsSufficient = 0;
-                }
-            }
-
-            // Write new balances to accounts if all transactions are valid
-            if (accountsSufficient) {
-                // Write new balances
-                for (i = 0; i < job->num_trans; i++) {
-                    // Write new balance to the account
-                    write_account(job->transactions[i].acc_id, balanceArr[i]);
-                }
-            }
+            int insufAccID = transaction_operation(job);
 
             // Relenquishe Locks for each count
             for (i = 0; i < job->num_trans; i++) {
@@ -342,13 +317,14 @@ void* worker(void * arg) {
             // Get endtime
             gettimeofday(&job->endtime, NULL);
             // Print result to file
-            if (accountsSufficient) {
+            if (insufAccID == -1) {
                 fprintf(fp, "%d OK TIME %ld.%06.ld %ld.%06.ld\n", job->request_id, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
             } else {
-                fprintf(fp, "%d ISF %d TIME %ld.%06.ld %ld.%06.ld\n", job->request_id, firstISFAcc, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
+                fprintf(fp, "%d ISF %d TIME %ld.%06.ld %ld.%06.ld\n", job->request_id, insufAccID, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
             }
         } else {
             // Perform Balance operation
+
             // Get lock associated account id
             pthread_mutex_lock(&acc_mut[job->check_acc_id]);
             // Call read account and store result
@@ -359,27 +335,59 @@ void* worker(void * arg) {
             // Get endtime
             gettimeofday(&job->endtime, NULL);
             // Print result to file
-            
             fprintf(fp, "%d BAL %d TIME %ld.%06.ld %ld.%06.ld\n", job->request_id, balance, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
         }
-
-        //fprintf(fp, "Request Finished, Jobs Remaining: %d\n", Q.num_jobs);
     }
     return NULL;
 }
 
 /**
- * @brief 
+ * Performs a transaction operation on the provided request structure. If any account is incapable of carrying out the transaction
+ * without suffficient funds, then all transactions in the structure are voided and keep their original balances.
  * 
- * @param r 
- * @return int 
+ * @param job - structure containing request information.
+ * @return int - returns -1 if transactions were sufficient, or returns account ID of the first account with insufficient funds.
  */
-int add_request(struct request * r) {
+int transaction_operation(struct request * job) {
+    // Perform Transactions
+    int firstISFAcc = -1;
+    int balanceArr[job->num_trans];
+
+    int i;
+    for (i = 0; i < job->num_trans && firstISFAcc == -1; i++) {
+        // Get Account Balance
+        balanceArr[i] = read_account(job->transactions[i].acc_id);
+        // Perform Transaction
+        balanceArr[i] = balanceArr[i] + job->transactions[i].amount;
+        // Check if transaction is valid
+        if(balanceArr[i] < 0) {
+            // Transaction was not valid, store account ID
+            firstISFAcc = job->transactions[i].acc_id;
+        }
+    }
+
+    // Write new balances to accounts if all transactions are valid
+    if (firstISFAcc == -1) {
+        // Write new balances
+        for (i = 0; i < job->num_trans; i++) {
+            // Write new balance to the account
+            write_account(job->transactions[i].acc_id, balanceArr[i]);
+        }
+    }
+    // Return ID of the ISF account or -1 if all accounts performed transactions successfully
+    return firstISFAcc;
+}
+
+/**
+ * Adds a new job to the end of the job queue.
+ * 
+ * @param r - job of struct request type to be added to the queue
+ */
+void add_request(struct request * r) {
     // Skip if new request is NULL
     if (r != NULL) {
         // Lock the queue
         pthread_mutex_lock(&q_mut);
-
         // Check if queue is empty
         if (Q.num_jobs < 1) {
             // r will be the head and tail 
@@ -393,30 +401,24 @@ int add_request(struct request * r) {
         }
         // Increment job count
         Q.num_jobs++;
-
-        //fprintf(fp, "Request added to queue. Current job count: %d\n", Q.num_jobs);
-
         // Unlock the queue
         pthread_mutex_unlock(&q_mut);
-
         // Return 1 for succesul request addition
-        return 1;
+        return;
     }
-
     printf("WARNING: Request to add was NULL, so it was not added to the job queue.\n");
 }
 
 /**
- * @brief 
+ * Removes the job at the front of the job queue and returns a pointer the removed job.
  * 
- * @return struct request* 
+ * @return struct request* - the job from the front of the queue. Returns NULL if queue is empty.
  */
 struct request * get_request() {  
     if (Q.num_jobs < 1) {
         // Queue is empty return NULL
         return NULL;
     } 
-
     // struct value to return
     struct request * task;
     // Task gets the first job in line
@@ -429,8 +431,6 @@ struct request * get_request() {
     }
     // Decrement job count
     Q.num_jobs--;
-    //fprintf(fp, "Request removed from queue. Current job count: %d\n", Q.num_jobs);
-
     // return the task
     return task;
 }
