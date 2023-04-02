@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
 
     // Program Termination
     //free_accounts();
-    //fclose(fp);
+    fclose(fp);
     return 0;
 }
 
@@ -164,8 +164,6 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
         userInput[strlen(userInput) - 1] = '\0';
         // Gets first input chunk    
         token = strtok(userInput, delim);
-        // Output indicator
-        printf("< ");
         if (!strcmp(token, "END")) {
             // Begin Exit Protocol
             done = end_request_protocol(workersArray, numWThreads);
@@ -173,6 +171,8 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
             return;
         } else if (!strcmp(token, "CHECK")) {       
             // CHECK REQUEST PROTOCOL
+            // Output indicator
+            printf("< ");
             // Get Account ID to check
             token = strtok(NULL, delim);            
             if (token != NULL) {
@@ -196,6 +196,8 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
             }
         } else if (!strcmp(token, "TRANS")) {       
             // TRANSACTION REQUEST PROTOCOL
+            // Output indicator
+            printf("< ");
             // Stores request validity: 1 = valid, 0 = invalid
             int validRequest = 1;                   
             // Build Transaction Request
