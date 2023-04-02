@@ -328,28 +328,19 @@ int end_request_protocol(pthread_t * workersArray, int numWThreads) {
  * @return void* 
  */
 void* worker(void * arg) {
-    while (!clockOut) {
+    while (clockOut == 0 || Q.num_jobs > 0) {
         // Pointer to worker's current task
         struct request * job = NULL;
-
-        // Waits until a job is available or it is time to clock out
-        while (Q.num_jobs > 0 && clockOut == 0) {
-            // returns if clockOut is true and no jobs remain
-            if (clockOut && Q.num_jobs == 0) {
-                exit(0);
-            } else {
-                // Lock the queue
-                pthread_mutex_lock(&q_mut);
-                while(Q.num_jobs == 0 && clockOut == 0) {
-                    pthread_cond_wait(&jobs_cv, &q_mut);
-                }
-                // Attempts to get a job, if NULL, there are no current jobs in the queue
-                job = get_request();
-                // Unlock the queue
-                pthread_mutex_unlock(&q_mut);
-            }   
+        // Lock the queue
+        pthread_mutex_lock(&q_mut);
+        while(Q.num_jobs == 0 && clockOut == 0) {
+            pthread_cond_wait(&jobs_cv, &q_mut);
         }
-
+        // Attempts to get a job, if NULL, there are no current jobs in the queue
+        job = get_request();
+        // Unlock the queue
+        pthread_mutex_unlock(&q_mut);
+          
         if (job != NULL && job->check_acc_id == -1) {
             // Perform Transaction operation
             // Sort Transactions by Account ID from least to greatest
@@ -401,7 +392,6 @@ void* worker(void * arg) {
             funlockfile(fp);
         }
     }
-
     exit(0);
 }
 
