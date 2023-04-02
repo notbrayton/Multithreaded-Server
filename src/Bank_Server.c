@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
     }
 
 
-    pthread_create(&input_tid, NULL, program_loop, (void *)&workers_tid);
+    pthread_create(&input_tid, NULL, program_loop, NULL);
 
     for (t = 0; t < numWThreads; t++) {
         thread_index[t] = t;
@@ -167,9 +167,7 @@ int main(int argc, char *argv[]) {
  * @param workersArray - pointer to the start of the worker thread array
  * @param numWThreads  - number worker threads in the thread array
  */
-void* program_loop(void * arg) { 
-    pthread_t * workersArray = *(pthread_t *) arg;
-    
+void* program_loop(void * arg) {     
     // Allocate space for input string
     char *userInput = malloc(STR_MAX_SIZE);     
     // Tells token where to split
