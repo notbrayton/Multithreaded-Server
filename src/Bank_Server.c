@@ -55,14 +55,17 @@ pthread_cond_t jobs_cv;
 struct queue Q;                 // Global Queue containing the requests
 int clockOut = 0;               // Signifies to the workers that it is time to clock out
 FILE *fp;                       // Pointer to output file
+int numWorkersRemaining;
+int numAccounts;
+int numWThreads;
 /*===============================================================*/
 
 /*================================================================
  *                    FUNCTION DECLARATIONS                      *
  ================================================================*/
-void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts);
-int end_request_protocol(pthread_t * workersArray, int numWThreads);
-void* worker(void *);
+void* program_loop(void * arg);
+int end_request_protocol();
+void* worker(void * arg);
 int transaction_operation(struct request * job);
 void add_request(struct request * r);
 struct request * get_request();
@@ -90,14 +93,14 @@ int main(int argc, char *argv[]) {
     fp = fopen(argv[3], "w");
 
     // Initializing Accounts
-    int numAccounts = atoi(argv[2]);
+    numAccounts = atoi(argv[2]);
     if (!initialize_accounts(numAccounts)) {
         printf("ERROR: Account creation failed.\n");
         return 0;
     }
 
     // Validate Worker Quantity
-    int numWThreads = atoi(argv[1]);
+    numWThreads = atoi(argv[1]);
     if (numWThreads < 1) {
         printf("ERROR: Invalid worker thread amount, must be at least 1.\n");
         return 0;
@@ -112,8 +115,10 @@ int main(int argc, char *argv[]) {
      *                     THREAD INITIALIZATION                     *
      ================================================================*/ 
     // array of worker pthreads
+    pthread_t input_tid;
     pthread_t workers_tid[numWThreads]; 
     int thread_index[numWThreads];
+    numWorkersRemaining = numWThreads;
 
     pthread_cond_init(&jobs_cv, NULL);
 
@@ -128,6 +133,9 @@ int main(int argc, char *argv[]) {
         pthread_mutex_init(&acc_mut[t], NULL); 
     }
 
+
+    pthread_create(&input_tid, NULL, program_loop, (void *)&workers_tid);
+
     for (t = 0; t < numWThreads; t++) {
         thread_index[t] = t;
         // creates each worker thread
@@ -136,7 +144,14 @@ int main(int argc, char *argv[]) {
     /*===============================================================*/
 
     // Enter program loop
-    program_loop(workers_tid, numWThreads, numAccounts);
+    // program_loop(workers_tid, numWThreads, numAccounts);
+
+    // Join Threads to make main wait for worker threads before proceeding
+    pthread_join(input_tid, NULL);
+    int t = 0;
+    for (t = 0; t < numWThreads; t++) {
+        pthread_join(workers_tid[t], NULL);
+    }
 
     // Program Termination
     free_accounts();
@@ -152,7 +167,9 @@ int main(int argc, char *argv[]) {
  * @param workersArray - pointer to the start of the worker thread array
  * @param numWThreads  - number worker threads in the thread array
  */
-void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
+void* program_loop(void * arg) { 
+    pthread_t * workersArray = *(pthread_t *) arg;
+    
     // Allocate space for input string
     char *userInput = malloc(STR_MAX_SIZE);     
     // Tells token where to split
@@ -176,7 +193,7 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
         token = strtok(userInput, delim);
         if (!strcmp(token, "END")) {
             // Begin Exit Protocol
-            done = end_request_protocol(workersArray, numWThreads);
+            done = end_request_protocol();
             // Exit the program loop function
             return;
         } else if (!strcmp(token, "CHECK")) {       
@@ -298,9 +315,9 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
  * @param numWThreads 
  * @return int* 
  */
-int end_request_protocol(pthread_t * workersArray, int numWThreads) {
-   // Wait for job queue to reach to zero
-   while (Q.num_jobs != 0) {
+int end_request_protocol() {
+    // Wait for job queue to reach to zero
+    while (numWorkersRemaining > 0) {
        // wait
        pthread_cond_broadcast(&jobs_cv);
        //usleep(10);
@@ -308,12 +325,6 @@ int end_request_protocol(pthread_t * workersArray, int numWThreads) {
 
     // Signifies to workers, that they can finish
     clockOut = 1;
-
-    // Join Threads to make main wait for worker threads before proceeding
-    int t = 0;
-    for (t = 0; t < numWThreads; t++) {
-        pthread_join(workersArray[t], NULL);
-    }
 
     // Return value of 1 to be assigned to program loop condition
     return 1;
@@ -390,6 +401,7 @@ void* worker(void * arg) {
             funlockfile(fp);
         }
     }
+    numWorkersRemaining--;
     exit(0);
 }
 
