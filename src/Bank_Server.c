@@ -143,11 +143,16 @@ int main(int argc, char *argv[]) {
  * @param numWThreads  - number worker threads in the thread array
  */
 void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
-    char *userInput = malloc(STR_MAX_SIZE);     // Allocate space for input string
-    const char delim[2] = " ";                  // Tells token where to split
-    char * token;                               // Temporarly store input chunk
-    int requestCount = 1;                       // Used as the request ID
-    int done = 0;                               // Loop Condition
+    // Allocate space for input string
+    char *userInput = malloc(STR_MAX_SIZE);     
+    // Tells token where to split
+    const char delim[2] = " ";       
+    // Temporarly store input chunk           
+    char * token;  
+    // Used as the request ID                             
+    int requestCount = 1;       
+    // Loop Condition                
+    int done = 0;                               
 
     // EVENT LOOP
     while(!done) {
@@ -159,10 +164,8 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
         userInput[strlen(userInput) - 1] = '\0';
         // Gets first input chunk    
         token = strtok(userInput, delim);
-        
         // Output indicator
         printf("< ");
-
         if (!strcmp(token, "END")) {
             // Begin Exit Protocol
             done = end_request_protocol(workersArray, numWThreads);
@@ -179,7 +182,6 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
                 bReq.transactions = NULL;
                 bReq.num_trans = -1;
                 gettimeofday(&bReq.starttime, NULL);
-
                 // Add Request to queue 
                 add_request(&bReq);
                 // Console Response
@@ -194,7 +196,6 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
             // TRANSACTION REQUEST PROTOCOL
             // Stores request validity: 1 = valid, 0 = invalid
             int validRequest = 1;                   
-
             // Build Transaction Request
             struct request tReq;
             tReq.next = NULL;
@@ -205,21 +206,27 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
             tReq.transactions = malloc(sizeof(struct trans) * 10);  
             // Set number of transactions
             tReq.num_trans = 0;                                    
-
             // Build Transaction Pairs
             int i;
             for (i = 0; i < 10; i++) {
-                token = strtok(NULL, delim);                        // Get Account ID
+                // Get Account ID
+                token = strtok(NULL, delim);                        
                 if (token != NULL) { 
-                    tReq.transactions[i].acc_id = atoi(token);      // Assign token to account ID
-                    token = strtok(NULL, delim);                    // Get amount value
+                    // Assign token to account ID
+                    tReq.transactions[i].acc_id = atoi(token);     
+                    // Get amount value
+                    token = strtok(NULL, delim);                    
                     if (token != NULL && tReq.transactions[i].acc_id < numAccounts && tReq.transactions[i].acc_id >= 0) {
-                        tReq.transactions[i].amount = atoi(token);  // Assign token to amount
-                        tReq.num_trans++;                           // Increase Transaction count
+                        // Assign token to amount
+                        tReq.transactions[i].amount = atoi(token);  
+                        // Increase Transaction count
+                        tReq.num_trans++;                           
                     } else {
                         printf("INVALID REQUEST: an account within the Transaction Request was not provided a transaction amount or an invalid account number was provided.\n");
-                        validRequest = 0;   // Request Failed
-                        i = 10;             // End loop
+                        // Request Failed
+                        validRequest = 0; 
+                        // End loop
+                        i = 10;             
                     }
                 } else {
                     // End of transaction pairs
@@ -230,7 +237,6 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
                     }
                 }
             }
-
             // Add request and Increment Request Count
             if (validRequest) {
                 add_request(&tReq);
@@ -241,7 +247,6 @@ void program_loop(pthread_t * workersArray, int numWThreads, int numAccounts) {
         } else {
             printf("INVALID REQUEST: no action taken.\n");
         }
-        
         // Clear input string
         strcpy(userInput, "");
     }
@@ -262,7 +267,6 @@ int end_request_protocol(pthread_t * workersArray, int numWThreads) {
     while (Q.num_jobs != 0) {
         // wait
     }
-    
     // Signifies to workers, that they can finish
     clockOut = 1;
     // Join Threads to make main wait for worker threads before proceeding
@@ -302,30 +306,19 @@ void* worker(void * arg) {
 
         if (job->check_acc_id == -1) {
             // Perform Transaction operation
-            // Acquire Locks for each of the accounts
+            // Sort Transactions by Account ID from least to greatest
             sortIDLeastToGreatest(job->transactions, job->num_trans);
-
-            // Print Sorted Transaction Array
-            printf("Accounts: ");
-            int i;
-            for (i = 0; i < job->num_trans; i++) {
-                printf("%d, ", job->transactions[i].acc_id);
-            }
-            printf("\n");
-
             // Acquire Locks for each of the accounts
-            //int i;
+            int i;
             for (i = 0; i < job->num_trans; i++) {
                 pthread_mutex_lock(&acc_mut[job->transactions[i].acc_id]);
             }
-
+            // Attempt operation
             int insufAccID = transaction_operation(job);
-
             // Relenquishe Locks for each count
             for (i = 0; i < job->num_trans; i++) {
                 pthread_mutex_unlock(&acc_mut[job->transactions[i].acc_id]);
             }
-
             // Get endtime
             gettimeofday(&job->endtime, NULL);
             // Print result to file
@@ -336,14 +329,12 @@ void* worker(void * arg) {
             }
         } else {
             // Perform Balance operation
-
             // Get lock associated account id
             pthread_mutex_lock(&acc_mut[job->check_acc_id]);
             // Call read account and store result
             int balance = read_account(job->check_acc_id);
             // reliquishe the lock 
             pthread_mutex_unlock(&acc_mut[job->check_acc_id]);
-
             // Get endtime
             gettimeofday(&job->endtime, NULL);
             // Print result to file
@@ -459,11 +450,4 @@ void sortIDLeastToGreatest(struct trans * transactions, int num_trans) {
             }
         }
     }
-
-    // Print Sorted Transaction Array
-    printf("Accounts: ");
-    for (i = 0; i < num_trans; i++) {
-        printf("%d, ", transactions[i].acc_id);
-    }
-    printf("\n");
 }
