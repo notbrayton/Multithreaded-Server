@@ -4,6 +4,10 @@
  * CPR E 308 Project 2 - Multithreaded Server
  *      Bank_Server.c contains code for the server that 
  *      manages bank accounts. 
+ * 
+ * Test File Project2Test_v2.c
+ *      compile with: 
+ *          gcc -o Project2Test -lpthread Project2Test_v2.c
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -438,11 +442,16 @@ struct request * get_request() {
     struct request * task;
     // Task gets the first job in line
     task = Q.head;
-    // Head gets the next job in line
-    Q.head = Q.head->next;
+    
+    // Give queue pointer NULL if no more jobs exist
     if(Q.num_jobs == 1) {
+        // Reassign head to NULL since queue would now be empty
+        Q.head = NULL;
         // Reassign tail to NULL since queue would now be empty
         Q.tail = NULL;
+    } else {
+        // Head gets the next job in line
+        Q.head = Q.head->next;
     }
     // Decrement job count
     Q.num_jobs--;
