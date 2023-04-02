@@ -305,11 +305,10 @@ int end_request_protocol(pthread_t * workersArray, int numWThreads) {
         pthread_cond_broadcast(&jobs_cv);
     }
 
-    printf("Job Count: %d", Q.num_jobs);
+    fprintf("Job Count: %d", Q.num_jobs);
 
     // Signifies to workers, that they can finish
     clockOut = 1;
-
     pthread_cond_broadcast(&jobs_cv);
 
     // Join Threads to make main wait for worker threads before proceeding
@@ -334,24 +333,24 @@ void* worker(void * arg) {
         struct request * job = NULL;
 
         // Waits until a job is available or it is time to clock out
-        while (job == NULL) {
+        while (Q.num_jobs > 0 && clockOut == 0) {
             // returns if clockOut is true and no jobs remain
             if (clockOut && Q.num_jobs == 0) {
                 exit(0);
-            }
-
-            // Lock the queue
-            pthread_mutex_lock(&q_mut);
-            while(Q.num_jobs == 0 && clockOut == 0) {
-                pthread_cond_wait(&jobs_cv, &q_mut);
-            }
-            // Attempts to get a job, if NULL, there are no current jobs in the queue
-            job = get_request();
-            // Unlock the queue
-            pthread_mutex_unlock(&q_mut);
+            } else {
+                // Lock the queue
+                pthread_mutex_lock(&q_mut);
+                while(Q.num_jobs == 0 && clockOut == 0) {
+                    pthread_cond_wait(&jobs_cv, &q_mut);
+                }
+                // Attempts to get a job, if NULL, there are no current jobs in the queue
+                job = get_request();
+                // Unlock the queue
+                pthread_mutex_unlock(&q_mut);
+            }   
         }
 
-        if (job->check_acc_id == -1) {
+        if (job != NULL && job->check_acc_id == -1) {
             // Perform Transaction operation
             // Sort Transactions by Account ID from least to greatest
             sortIDLeastToGreatest(job->transactions, job->num_trans);
@@ -382,7 +381,9 @@ void* worker(void * arg) {
                 // unlock print file
                 funlockfile(fp);
             }
-        } else {
+        } 
+
+        if (job != NULL && job->check_acc_id != -1) {
             // Perform Balance operation
             // Get lock associated account id
             pthread_mutex_lock(&acc_mut[job->check_acc_id - 1]);
@@ -400,6 +401,7 @@ void* worker(void * arg) {
             funlockfile(fp);
         }
     }
+    
     exit(0);
 }
 
