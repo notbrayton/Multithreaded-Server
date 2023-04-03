@@ -330,7 +330,7 @@ void* worker(void * arg) {
         q_Occupied = 1;
         // Attempts to get a job, if NULL, there are no current jobs in the queue
         job = get_request();
-        printf("Thread #%d: Job #%d\n", *(int *)arg, job->request_id);
+        //printf("Thread #%d: Job #%d\n", *(int *)arg, job->request_id);
         pthread_cond_broadcast(&jobs_cv);
         q_Occupied = 0;
         // Unlock the queue
