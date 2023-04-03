@@ -330,13 +330,13 @@ void* worker(void * arg) {
         q_Occupied = 1;
         // Attempts to get a job, if NULL, there are no current jobs in the queue
         job = get_request();
-        //printf("Thread #%d: Job #%d\n", *(int *)arg, job->request_id);
         pthread_cond_broadcast(&jobs_cv);
         q_Occupied = 0;
         // Unlock the queue
         pthread_mutex_unlock(&q_mut);
 
-          
+        printf("Thread #%d: Job #%d\n", *(int *)arg, job->request_id);
+
         if (job != NULL && job->check_acc_id == -1) {
             // Perform Transaction operation
             // Sort Transactions by Account ID from least to greatest
