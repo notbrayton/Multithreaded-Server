@@ -64,7 +64,6 @@ int numWThreads;
  *                    FUNCTION DECLARATIONS                      *
  ================================================================*/
 void* program_loop(void * arg);
-int end_request_protocol();
 void* worker(void * arg);
 int transaction_operation(struct request * job);
 void add_request(struct request * r);
@@ -133,7 +132,6 @@ int main(int argc, char *argv[]) {
         pthread_mutex_init(&acc_mut[t], NULL); 
     }
 
-
     pthread_create(&input_tid, NULL, program_loop, NULL);
 
     for (t = 0; t < numWThreads; t++) {
@@ -142,9 +140,6 @@ int main(int argc, char *argv[]) {
         pthread_create(&workers_tid[t], NULL, worker, (void *)&thread_index[t]);    
     }
     /*===============================================================*/
-
-    // Enter program loop
-    // program_loop(workers_tid, numWThreads, numAccounts);
 
     // Join Threads to make main wait for worker threads before proceeding
     pthread_join(input_tid, NULL);
@@ -190,7 +185,8 @@ void* program_loop(void * arg) {
         token = strtok(userInput, delim);
         if (!strcmp(token, "END")) {
             // Begin Exit Protocol
-            done = end_request_protocol();
+            done =  1;
+            clockOut = 1;
             // Exit the program loop function
             exit(0);
         } else if (!strcmp(token, "CHECK")) {       
@@ -304,31 +300,6 @@ void* program_loop(void * arg) {
 }
 
 /**
- * Handles the termination state of the server. The function will wait until all 
- * remaining requests in the request queue are handled. From there it signals to 
- * the workers that they are free to clock out, and then joins the main thread
- * with all of the worker threads to wait until each worker finishes.
- * 
- * @param workersArray 
- * @param numWThreads 
- * @return int* 
- */
-int end_request_protocol() {
-    // Wait for job queue to reach to zero
-   // while (numWorkersRemaining > 0) {
-       // wait
-        //printf("Number of workers remaining: %d\n", numWorkersRemaining);
-        //printf("Number of jobs remaining: %d\n", Q.num_jobs);
-    //}
-
-    // Signifies to workers, that they can finish
-    clockOut = 1;
-
-    // Return value of 1 to be assigned to program loop condition
-    return 1;
-}
-
-/**
  * Handles the worker thread operations. Continues to loop until clockOut signals the loop to end. Worker will wait until a
  * job is available, and once the job is acquired the worker determines whether it is a CHECK request or a TRANS request. 
  * Worker then carrys out the job and repeats the process. 
@@ -368,13 +339,13 @@ void* worker(void * arg) {
             if (insufAccID == -1) {
                 // lock print file
                 flockfile(fp);
-                fprintf(fp, "%d OK TIME %ld.%06ld %ld.%06ld \tThread: %d, Jobs: %d\n", job->request_id, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec, *((int *)arg), Q.num_jobs);
+                fprintf(fp, "%d OK TIME %ld.%06ld %ld.%06ld\n", job->request_id, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
                 // unlock print file
                 funlockfile(fp);
             } else {
                 // lock print file
                 flockfile(fp);
-                fprintf(fp, "%d ISF %d TIME %ld.%06ld %ld.%06ld \tThread: %d, Jobs: %d\n", job->request_id, insufAccID, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec, *((int *)arg), Q.num_jobs);
+                fprintf(fp, "%d ISF %d TIME %ld.%06ld %ld.%06ld\n", job->request_id, insufAccID, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
                 // unlock print file
                 funlockfile(fp);
             }
@@ -393,7 +364,7 @@ void* worker(void * arg) {
             // lock print file
             flockfile(fp);
             // Print result to file
-            fprintf(fp, "%d BAL %d TIME %ld.%06ld %ld.%06ld \tThread: %d, Jobs: %d\n", job->request_id, balance, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec, *((int *)arg), Q.num_jobs);
+            fprintf(fp, "%d BAL %d TIME %ld.%06ld %ld.%06ld\n", job->request_id, balance, job->starttime.tv_sec, job->starttime.tv_usec, job->endtime.tv_sec, job->endtime.tv_usec);
             // unlock print file
             funlockfile(fp);
         }
