@@ -450,6 +450,9 @@ void add_request(struct request * r) {
         }
         // Increment job count
         Q.num_jobs++;
+
+        printf("Head is pointing at Request #%d\n", Q.head->request_id);
+
         // Return 1 for succesul request addition
         return;
     }
@@ -483,6 +486,9 @@ struct request * get_request() {
     }
     // Decrement job count
     Q.num_jobs--;
+
+    printf("Returning Request #%d\n", task->request_id);
+
     // return the task
     return task;
 }
