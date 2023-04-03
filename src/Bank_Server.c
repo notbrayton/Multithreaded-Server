@@ -55,10 +55,10 @@ pthread_cond_t jobs_cv;
 struct queue Q;                 // Global Queue containing the requests
 int clockOut = 0;               // Signifies to the workers that it is time to clock out
 FILE *fp;                       // Pointer to output file
-int numWorkersRemaining;
-int numAccounts;
-int numWThreads;
-int q_Occupied;
+int numWorkersRemaining;        // Variable containing number of worker threads in action
+int numAccounts;                // Number of accounts
+int numWThreads;                // Number of threads at startup
+int q_Occupied;                 // Holds the status of whether or not the queue is occupied
 /*===============================================================*/
 
 /*================================================================
@@ -114,7 +114,6 @@ int main(int argc, char *argv[]) {
     /*================================================================
      *                     THREAD INITIALIZATION                     *
      ================================================================*/ 
-    // array of worker pthreads
     pthread_t input_tid;
     pthread_t workers_tid[numWThreads]; 
     int thread_index[numWThreads];
@@ -143,7 +142,7 @@ int main(int argc, char *argv[]) {
     }
     /*===============================================================*/
 
-    // Join Threads to make main wait for worker threads before proceeding
+    // Join Threads to make main wait for input and worker threads before proceeding
     pthread_join(input_tid, NULL);
     for (t = 0; t < numWThreads; t++) {
         pthread_join(workers_tid[t], NULL);
@@ -354,7 +353,7 @@ void* worker(void * arg) {
             }
             // Attempt operation
             int insufAccID = transaction_operation(job);
-            // Relenquishe Locks for each count
+            // Relenquishe Locks for each account
             for (i = 0; i < job->num_trans; i++) {
                 pthread_mutex_unlock(&acc_mut[job->transactions[i].acc_id - 1]);
             }
