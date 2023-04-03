@@ -467,6 +467,7 @@ void add_request(struct request * r) {
 struct request * get_request() {  
     if (Q.num_jobs < 1) {
         // Queue is empty return NULL
+        printf("Returning NULL Request\n");
         return NULL;
     } 
     // struct value to return
