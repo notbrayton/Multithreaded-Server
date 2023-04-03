@@ -335,7 +335,13 @@ void* worker(void * arg) {
         // Unlock the queue
         pthread_mutex_unlock(&q_mut);
 
-        printf("Thread #%d: Job #%d\n", *(int *)arg, job->request_id);
+
+        // TEMPORARY
+        int reqNum = -1;
+        if (job != NULL) {
+            reqNum = job->request_id;
+        }
+        printf("Thread #%d: Job #%d\n", *(int *)arg, reqNum);
 
         if (job != NULL && job->check_acc_id == -1) {
             // Perform Transaction operation
