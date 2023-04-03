@@ -58,6 +58,7 @@ FILE *fp;                       // Pointer to output file
 int numWorkersRemaining;
 int numAccounts;
 int numWThreads;
+int q_Occupied;
 /*===============================================================*/
 
 /*================================================================
@@ -119,6 +120,7 @@ int main(int argc, char *argv[]) {
     int thread_index[numWThreads];
     numWorkersRemaining = numWThreads;
 
+    q_Occupied = 0;
     pthread_cond_init(&jobs_cv, NULL);
 
     // Allocating enough space for all the locks
@@ -211,10 +213,14 @@ void* program_loop(void * arg) {
 
                     // Lock the queue
                     pthread_mutex_lock(&q_mut);
+                    while(q_Occupied) {
+                        pthread_cond_wait(&jobs_cv, &q_mut);
+                    }
+                    q_Occupied = 1;
                     // Add Request to queue 
                     add_request(&bReq);
                     pthread_cond_broadcast(&jobs_cv);
-
+                    q_Occupied = 0;
                     // unlock the queue
                     pthread_mutex_unlock(&q_mut);
 
@@ -281,9 +287,14 @@ void* program_loop(void * arg) {
             if (validRequest) {
                 // Lock the queue
                 pthread_mutex_lock(&q_mut);
+                while(q_Occupied) {
+                    pthread_cond_wait(&jobs_cv, &q_mut);
+                }
+                q_Occupied = 1;
                 // Add request to queue
                 add_request(&tReq);
                 pthread_cond_broadcast(&jobs_cv);
+                q_Occupied = 0;
                 // unlock the queue
                 pthread_mutex_unlock(&q_mut);
                 // Console Response
@@ -313,10 +324,17 @@ void* worker(void * arg) {
         
         // Lock the queue
         pthread_mutex_lock(&q_mut);
+        while(q_Occupied) {
+            pthread_cond_wait(&jobs_cv, &q_mut);
+        }
+        q_Occupied = 1;
         // Attempts to get a job, if NULL, there are no current jobs in the queue
         job = get_request();
+        pthread_cond_broadcast(&jobs_cv);
+        q_Occupied = 0;
         // Unlock the queue
         pthread_mutex_unlock(&q_mut);
+
           
         if (job != NULL && job->check_acc_id == -1) {
             // Perform Transaction operation
