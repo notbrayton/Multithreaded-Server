@@ -330,6 +330,7 @@ void* worker(void * arg) {
         q_Occupied = 1;
         // Attempts to get a job, if NULL, there are no current jobs in the queue
         job = get_request();
+        printf("Thread #%d: Job #%d\n", *(int *)arg, job->request_id);
         pthread_cond_broadcast(&jobs_cv);
         q_Occupied = 0;
         // Unlock the queue
@@ -467,7 +468,6 @@ void add_request(struct request * r) {
 struct request * get_request() {  
     if (Q.num_jobs < 1) {
         // Queue is empty return NULL
-        printf("Returning NULL Request\n");
         return NULL;
     } 
     // struct value to return
